@@ -11,7 +11,7 @@ const MESSAGING_PORT = 8003;
 const NOTIFICATIONS_PORT = 8004;
 const ANALYTICS_PORT = 8005;
 
-const MY_PORT = USER_PORT;
+const MY_PORT = CONTENT_PORT;
 
 const app = express();
 app.use(bodyParser.json());
