@@ -10,7 +10,7 @@
         event.preventDefault();
         console.log(name, password)
         try {
-        const response = await axios.post(AUTH_API, { name, password });
+        const response = await axios.post(`${AUTH_API}/auth/login`, { name, password });
         console.log(response.data);
         } catch (error) {
             console.error(error);
