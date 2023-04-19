@@ -3,7 +3,6 @@ import Ajv, { ValidationError } from 'ajv';
 import { Post, UpdatePost } from "../models/schema-validation.js";
 
 
-
 const ajv = new Ajv({ allErrors: true })
 const postValidate = ajv.compile(Post)
 const updatePostValidate = ajv.compile(UpdatePost)
