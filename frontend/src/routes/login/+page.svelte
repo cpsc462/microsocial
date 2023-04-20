@@ -10,8 +10,8 @@
         event.preventDefault();
         console.log(name, password)
         try {
-        const response = await axios.post(`${AUTH_API}/auth/login`, { name, password });
-        console.log(response.data);
+            const response = await axios.post(`${AUTH_API}/auth/login`, { name, password });
+            console.log(response.data);
         } catch (error) {
             console.error(error);
         }
@@ -39,6 +39,7 @@ input {
   height: 40px;
   font-size: 18px;
   border-radius: 5px;
+  padding-left: 10px ;
 }
 
 h2 {
@@ -49,6 +50,7 @@ h2 {
     display: flex;
     justify-content: center;
     align-items: center;
+    margin-top: 50px;
 }
 
 .form-wrapper {
