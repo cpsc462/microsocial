@@ -2,19 +2,10 @@
 // @ts-nocheck
     import axios from 'axios';
     import { AUTH_API } from '../../utils/api'
-    import { user } from '../../store';
-    import { onMount } from 'svelte';
-
     let name = '';
     let password = '';
 
     // @ts-ignore
-    // onMount(() => {
-    //     if (user) {
-    //         window.location.href = '/';
-    //     }
-    // });
-
     const handleSubmit = async (event) => {
         event.preventDefault();
         console.log(name, password)
@@ -43,7 +34,6 @@
 </div>
 
 <style>
-    
 input {
   width: 300px;
   height: 40px;

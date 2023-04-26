@@ -1,1 +1,1 @@
-export const MY_SERVICE = "Notifications"
+export const MY_SERVICE = "Content"

@@ -163,27 +163,6 @@
  *         { name: "alonzo", password: "lambda" }
  *       ]
  * 
-//  *     CreatingEvent:
-//  *       type: object
-//  *       required:
-//  *         - name
-//  *         - password
-//  *       properties:
-//  *         name:
-//  *           type: string
-//  *           minLength: 1
-//  *           maxLength: 32
-//  *           pattern: '^[A-Za-z0-9_.-]{1,32}$'
-//  *           description: Name that they log in with. Must be unique
-//  *         password:
-//  *           type: string
-//  *           minLength: 4
-//  *           format: password
-//  *           description: Guess. No leading or trailing spaces. Never returned by an API.
-//  *       examples: [
-//  *         { name: "alonzo", password: "lambda" }
-//  *       ]
-//  *  * 
  * 
  *     UpdatingUser:
  *       type: object

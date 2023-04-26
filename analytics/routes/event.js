@@ -51,7 +51,7 @@ router.get("/event/:id", (req, res) => {
     return;
   }
 
-  const stmt = db.prepare("SELECT id, type, message, severity, time FROM events where id = ?");
+  const stmt = db.prepare("SELECT id,name FROM events where id = ?");
   events = stmt.all([id]);
 
   if (events.length < 1) {
@@ -120,7 +120,7 @@ router.put("/event/:id", (req, res) => {
     return;
   }
 
-  const stmt = db.prepare(`UPDATE events SET type=?, message=?, severity=?, time=? WHERE id=?`);
+  const stmt = db.prepare(`UPDATE events SET name=?, password=? WHERE id=?`);
 
   try {
     info = stmt.run([updatedEvent.name, updatedEvent.password, id]);
@@ -204,23 +204,13 @@ router.patch("/event/:id", (req, res) => {
     updateClauses = [];
     updateParams = [];
 
-    if ("type" in updatedEvent) {
-      updateClauses.push("type = ?");
+    if ("name" in updatedEvent) {
+      updateClauses.push("name = ?");
       updateParams.push(updatedEvent.name);
     }
 
-    if ("message" in updatedEvent) {
-      updateClauses.push("message = ?");
-      updateParams.push(updatedEvent.password);
-    }
-
-    if ("severity" in updatedEvent) {
-      updateClauses.push("severity = ?");
-      updateParams.push(updatedEvent.password);
-    }
-
-    if ("time" in updatedEvent) {
-      updateClauses.push("time = ?");
+    if ("password" in updatedEvent) {
+      updateClauses.push("password = ?");
       updateParams.push(updatedEvent.password);
     }
 

@@ -68,12 +68,13 @@ function deleteResultSetsBySessionId(session_id) {
 router.get('/users', async (req, res) => {
   now = new Date().toISOString()
 
-  const authenticated = ( req.auth !== undefined && 'session' in req.auth );
+  console.log({"a":1});
+
   session_id = uuidv4()
   if ( 'session' in req.query ) {
     session_id = req.query.session
   }
-  if ( authenticated ){
+  if ( req.auth !== undefined && 'session' in req.auth ){
      session_id = req.auth.session
   }
 
@@ -115,16 +116,8 @@ router.get('/users', async (req, res) => {
       // we needed this row to make order by/limit/offset work correctly. but do not show user.
       delete user.set_rownum
     })
-    const response = { users: users, start_at, page_size }
-    if (!authenticated) {
-      response.session = session_id
-    }
-
-    const row_count_map = db.get("SELECT COUNT(*) AS row_count FROM users_result_sets WHERE set_session_id = ?",[session_id])
-    response.row_count = row_count_map.row_count
-
-    res.json(response)
-    return
+    res.json({ users: users, start_at, page_size })
+    return;
   }
 
   errors = validate.UserFilteringSpec(req.query, '{query param}')

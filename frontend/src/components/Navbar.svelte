@@ -1,12 +1,10 @@
 <script>
 // @ts-nocheck
+    import Button, { Label } from '@smui/button'
     import { goto } from '$app/navigation';
-    import { user } from '../store';
-
     const handleSignInClick = () => {
         goto('/login')
     }
-    
 </script>
 
 
@@ -17,11 +15,7 @@
             <h3 on:click={() => goto('/')}>Microsocial</h3>
         </div>
         <div>
-            {#if !$user}
-                <button on:click={handleSignInClick}>Sign in</button>
-            {:else}
-                <h4>{$user.name}</h4>
-            {/if}
+            <button on:click={handleSignInClick}>Sign in</button>
         </div>
     </div>
 </nav>
@@ -47,14 +41,6 @@
     }
 
     h3:hover {
-        color: gray;
-    }
-
-    h4 {
-        cursor: pointer;
-    }
-
-    h4:hover {
         color: gray;
     }
 

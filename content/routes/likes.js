@@ -1,10 +1,5 @@
 import express from 'express'
-import {
-  likeComment,
-  likePost,
-  getCommentLike,
-  getPostLike
-} from '../controllers/likes.js'
+import { likeComment, likePost, getCommentLike, getPostLike } from '../controllers/likes.js'
 
 const router = express.Router()
 

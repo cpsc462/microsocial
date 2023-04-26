@@ -94,19 +94,19 @@ router.get("/events", (req, res) => {
 router.post("/events", (req, res) => {
   const event = req.body;
 
-  // errors = validate.CreatingEvent(event,"{body}");
-  // if (errors.length) {
-  //   res.json(errors);
-  //   res.statusMessage = "Invalid data";
-  //   res.status(StatusCodes.UNPROCESSABLE_ENTITY).end();
-  //   return;
-  // }
+  errors = validate.CreatingEvent(event,"{body}");
+  if (errors.length) {
+    res.json(errors);
+    res.statusMessage = "Invalid data";
+    res.status(StatusCodes.UNPROCESSABLE_ENTITY).end();
+    return;
+  }
 
-  const stmt = db.prepare(`INSERT INTO events (type, message, severity, time)
-                 VALUES (?, ?, ?, ?)`);
+  const stmt = db.prepare(`INSERT INTO events (name, password)
+                 VALUES (?, ?)`);
 
   try {
-    info = stmt.run([event.type, event.message, event.severity, event.time]);
+    info = stmt.run([event.name, event.password]);
   } catch (err) {
     if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
       res.statusMessage = "Account already exists";

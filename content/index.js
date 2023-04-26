@@ -2,59 +2,58 @@ import express from 'express'
 import bodyParser from 'body-parser'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
-import dotenv from 'dotenv'
+import dotenv from "dotenv"
 import helmet from 'helmet'
-// import { testCreateTable, testTable, testDropTable } from './db.js'
+import { testCreateTable, testTable, testDropTable } from './db.js'
 import { swaggerSpec, swaggerUIOptions } from './swagger-config/swagger.js'
 import { createDatabase } from './models/schema.js'
-import swaggerUi from 'swagger-ui-express'
-import fs from 'fs'
+import swaggerUi from 'swagger-ui-express';
+import fs from 'fs';
 import path from 'path'
 
 dotenv.config()
 
 const app = express()
-/* eslint-disable-next-line */
 const PORT = process.env.PORT || 8001
 
-app.set('title', 'Microsocial Content API')
-app.use(bodyParser.json({ limit: '50mb', extended: true }))
-app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }))
+app.set("title", "Microsocial Content API");
+app.use(bodyParser.json({ limit: "50mb", extended: true}))
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true}))
 app.use(cors())
 app.use(cookieParser())
 app.use(helmet())
-app.use(
-  '/docs',
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerSpec, swaggerUIOptions)
+app.use('/docs', 
+    swaggerUi.serve, 
+    swaggerUi.setup(swaggerSpec, swaggerUIOptions)
 )
 
 // Default route
 app.get('/', (req, res) => {
-  res.send('Hello')
+    res.send("Hello")
 })
 
 // Get service routes from routes
 fs.readdir('./routes', (err, files) => {
-  files.forEach(async (file) => {
-    if (file.match(/[.]js$/)) {
-      const endpoint = path.basename(file, '.js')
-      const { default: route } = await import(`./routes/${file}`)
-      if (route) app.use(`/content/${endpoint}`, route)
-    }
-  })
+    files.forEach(async (file) => {
+        if (file.match(/[.]js$/)) {
+            const endpoint = path.basename(file, '.js')
+            const {default: route} = await import(`./routes/${file}`)
+            if(route)
+                app.use(`/content/${endpoint}`, route)
+        }
+    })
 })
 
 // Test db to see if INSERT, CREATE, AND GET work
-// testCreateTable()
-// testTable()
-// testDropTable()
+testCreateTable()
+testTable()
+testDropTable()
 
 // initialize Database
 createDatabase()
 
 app.listen(PORT, () => {
-  console.log(`server started on ${PORT}`)
+    console.log(`server started on ${PORT}`)
 })
 
 export default app
