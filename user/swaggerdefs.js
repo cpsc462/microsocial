@@ -193,13 +193,15 @@
  *       ]
  *
   *     UserFilteringSpec:
- *       description: Valid query parameters. Result set is Users who match ALL criteria.
+ *       description: Valid query parameters. Result set is Users who match ALL criteria. If you are retrieving results from a previous set (start_at, page_size) it is not necessary to repeat the query/sort params. In fact they will be ignored. ** The query/sort params are only used when the "start_at" param is NOT specified. This is how a "new" query is signalled **
  *       type: object
  *       examples: 
  *           - id_LE: 1000
  *           - id_GE: 50
  *           - name_LE: "zebra"
  *           - name_GE: "aardvark"
+ *           - start_at: 1000
+ *           - page_size: 100
  *       properties:
  *         id_LE:
  *           type: integer
@@ -217,6 +219,14 @@
  *           type: string
  *           minLength: 1
  *           description: Users with an Name >= this (case insensitive) will be returned.
+ *         start_at:
+ *           type: integer
+ *           minimum: 1
+ *           description: Row number (NOT id) to start at. If this is specified by page_size is not, page_size defaults to (configured) 100 rows.
+ *         page_size:
+ *           type: integer
+ *           minimum: 1
+ *           description: How many rows to return each time?
  * 
  *     UserSortingSpec:
  *       type:  array

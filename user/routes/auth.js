@@ -180,7 +180,7 @@ router.post('/auth/token', async (req, res) => {
     return
   }
 
-  const access_token = generateAccessToken({ client_id })
+  const access_token = generateAccessToken({ client_id, session: old_refresh_token.session })
   const new_refresh_token = generateRefreshToken(
     { client_id },
     { expiresAt: new Date(old_refresh_token.expires) }
@@ -241,7 +241,7 @@ router.post('/auth/login', async (req, res) => {
   deleteRefreshTokensByUser(logged_in_user.id)
   console.log('Successful login', { logged_in_user })
 
-  const access_token = generateAccessToken({ client_id: logged_in_user.id })
+  const access_token = generateAccessToken({ client_id: logged_in_user.id, session: uuidv4() })
   const refresh_token = generateRefreshToken({ client_id: logged_in_user.id })
 
   res.json({

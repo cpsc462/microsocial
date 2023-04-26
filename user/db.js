@@ -5,7 +5,18 @@ var db = new Database('./users.db')
 db.exec(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL UNIQUE COLLATE NOCASE,
-        password TEXT NOT NULL
+        password TEXT NOT NULL,
+        versionkey INTEGER NOT NULL DEFAULT 1
+    );`)
+db.exec(`CREATE TABLE IF NOT EXISTS users_result_sets (
+        set_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        set_session_id TEXT,
+        set_querying_user_id INTEGER,
+        set_results_as_of TEXT NOT NULL,
+        set_rownum INTEGER,
+        id INTEGER,
+        name TEXT,
+        versionkey INTEGER 
     );`)
 db.exec(`CREATE TABLE IF NOT EXISTS refresh_tokens (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
