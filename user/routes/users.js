@@ -11,7 +11,7 @@ const { v4: uuidv4 } = require('uuid')
 var router = express.Router()
 module.exports.router = router
 
-const { uri, fetch } = require('../common')
+const { USERS_SERVICE, log_event, returnError } = require('../common')
 const { db } = require('../db')
 const { validate } = require('../utils/schema-validation')
 const { regexpCode } = require('ajv/dist/compile/codegen')
@@ -133,26 +133,27 @@ function create_new_result_set (req, session_id) {
   // hardcoding user_id for now
   where_vals = [1, now, session_id]
 
-  terms.filter( x => ('clause' in x))
-  .forEach((x) => {
-    const { term, clause, inverted } = x
-    if (term in req.query) {
-      if (Array.isArray(req.query[term])) {
-        const conjunction = inverted ? ' AND ' : ' OR '
-        clauses =
-          '(' +
-          Array(req.query[term].length).fill(clause).join(conjunction) +
-          ')'
-        // console.log({term:clauses,vals:req.query[term]})
-        where_clauses.push(clauses)
-        where_vals = where_vals.concat(req.query[term])
-      } else {
-        // console.log({term:clause,val:req.query[term]})
-        where_clauses.push(clause)
-        where_vals.push(req.query[term])
+  terms
+    .filter((x) => 'clause' in x)
+    .forEach((x) => {
+      const { term, clause, inverted } = x
+      if (term in req.query) {
+        if (Array.isArray(req.query[term])) {
+          const conjunction = inverted ? ' AND ' : ' OR '
+          clauses =
+            '(' +
+            Array(req.query[term].length).fill(clause).join(conjunction) +
+            ')'
+          // console.log({term:clauses,vals:req.query[term]})
+          where_clauses.push(clauses)
+          where_vals = where_vals.concat(req.query[term])
+        } else {
+          // console.log({term:clause,val:req.query[term]})
+          where_clauses.push(clause)
+          where_vals.push(req.query[term])
+        }
       }
-    }
-  })
+    })
 
   where_clause = where_clauses.join(' AND ')
   if (where_clause !== '') {
@@ -176,44 +177,117 @@ function create_new_result_set (req, session_id) {
   console.log({ result_sql, where_vals, queryparams: req.query })
   const result_set_stmt = db.prepare(result_sql)
 
-
   // creates result rows
   result_set_stmt.run(where_vals)
 }
 
+function parse_range_header (hdr,row_count) {
+  // must validate!
+  
+  ranges = []
+  range_type = hdr.match(/^(\w+)=/)
+  hdr = hdr.substring(range_type[0].length)
+
+  parts = hdr.match(/(\d+)\-(\d*)|\-(\d+)/g)
+  if (parts === null || parts.length < 2) {
+    console.log({ hdr, msg: 'no match' })
+    return ranges
+  }
+  parts.forEach( x => {
+    [dummy, first_num, second_num] = x.match(/(\d*)-(\d*)/)
+    start = 1
+    end = row_count
+    if ( first_num !== "" ) {
+      start = parseInt(first_num)
+    }
+    if ( second_num !== "" ) {
+      end = parseInt(second_num)
+    } 
+    ranges.push({start, end})
+  })
+  return ranges
+}
 // once the result set is populated, we return out of that (not doing the query again)
 function respond_from_existing_result_set (req, res, session_id) {
-  start_at = 'start_at' in req.query ? req.query.start_at : 1
-  page_size =
-    'page_size' in req.query
-      ? req.query.page_size
-      : process.env.DEFAULT_PAGE_SIZE
-
-  // pull from results, not fresh query
-  const get_users_from_set = `SELECT id, name, versionkey, set_rownum FROM users_result_sets WHERE set_session_id = ? ORDER BY set_rownum LIMIT ? OFFSET ?`
-  const get_users_from_set_stmt = db.prepare(get_users_from_set)
-
-  users = get_users_from_set_stmt.all(session_id, page_size, start_at)
-
   // make sure this is present and accurate -- not gonna trust what they passed in
   const row_count_map = db.get(
     'SELECT COUNT(*) AS row_count FROM users_result_sets WHERE set_session_id = ?',
     [session_id]
   )
+  const row_count = row_count_map.row_count
+
+  if (req.get('Range') !== '') {
+    range_header = parse_range_header(req.get('Range'),row_count)
+  }
+
+  // if (
+  //   range_header &&
+  //   (!('type' in range_header) || range_header.type !== 'rows')
+  // ) {
+  //   return returnError(res, {
+  //     status: StatusCodes.REQUESTED_RANGE_NOT_SATISFIABLE,
+  //     severity: 'Medium',
+  //     type: 'BadRange',
+  //     message: `Invalid range header received`
+  //   })
+  // }
+
+  // query params...
+  start_at = 'start_at' in req.query ? req.query.start_at : 1
+  page_size =
+    'page_size' in req.query
+      ? req.query.page_size
+      : parseInt(process.env.DEFAULT_PAGE_SIZE)
+  ranges_to_send = [{ start: start_at, end: start_at + page_size }]
+
+  // ...are overridden by Range header
+  if (range_header) {
+    ranges_to_send = range_header
+  }
+
+
+  // are ranges valid? This should be moved to swagger
+  ranges_to_send.forEach((x) => {
+    if (x.start < 1 || x.start > row_count || x.end < x.start) {
+      return returnError(res, {
+        status: StatusCodes.REQUESTED_RANGE_NOT_SATISFIABLE,
+        severity: 'Medium',
+        type: 'BadRange',
+        message: `Range exceeds existing row range`
+      })
+    }
+  })
+
+  // pull from results, not fresh query
+  const get_users_from_set = `SELECT id, name, versionkey, set_rownum FROM users_result_sets WHERE set_session_id = ? ORDER BY set_rownum LIMIT ? OFFSET ?`
+  const get_users_from_set_stmt = db.prepare(get_users_from_set)
+
+  users = []
+
+  ranges_to_send.forEach((range) => {
+    users = users.concat(
+      get_users_from_set_stmt.all(
+        session_id,
+        range.end - range.start - 1,
+        range.start
+      )
+    )
+  })
 
   // post-process users...
   users.forEach((user) => {
-    user.uri = uri(`/user/${user.id}`)
+    user.uri = USERS_SERVICE(`/user/${user.id}`)
 
     // we needed this row to make order by/limit/offset work correctly. but do not show user.
     delete user.set_rownum
   })
 
+  // note we only respond with start_at/page_size, even if Range: header was present
   const response = {
     users: users,
     start_at,
     page_size,
-    row_count: row_count_map.row_count
+    row_count
   }
 
   // we don't add the session id to the results if it is stored in the auth token
@@ -222,7 +296,15 @@ function respond_from_existing_result_set (req, res, session_id) {
     response.session = session_id
   }
 
+  res.set('Accept-Ranges', 'rows')
+  // res.set('Content-Range', `rows ${ranges_to_send[0].start}-${ranges_to_send[0].end}/${row_count}`)
   res.json(response)
+  res.status(StatusCodes.OK)
+
+  // Entire range? it's a 200. Otherwise partial range {
+  if (start_at != 1 || page_size < row_count) {
+    res.status(StatusCodes.PARTIAL_CONTENT)
+  }
 }
 
 function adjust_params_for_validation (req) {
@@ -354,6 +436,11 @@ router.post('/users', (req, res) => {
 
   errors = validate.CreatingUser(user, '{body}')
   if (errors.length) {
+    log_event({
+      severity: 'Low',
+      type: 'CreateUserFailed',
+      message: `User Creation failed: ${JSON.stringify(errors)}`
+    })
     res.json(errors)
     res.statusMessage = 'Invalid data'
     res.status(StatusCodes.UNPROCESSABLE_ENTITY).end()
@@ -367,10 +454,21 @@ router.post('/users', (req, res) => {
     info = stmt.run([user.name, user.password])
   } catch (err) {
     if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      log_event({
+        severity: 'Low',
+        type: 'NonUniqueNameCreateRequest',
+        message: `Create Request for (existing) User ${user.name} received.`
+      })
+
       res.statusMessage = 'Account already exists'
       res.status(StatusCodes.BAD_REQUEST).end()
       return
     }
+    log_event({
+      severity: 'Low',
+      type: 'CannotCreateUser',
+      message: `Create ${[ser.name, user.password]} failed: ${err}`
+    })
     console.log('insert error: ', { err, info, user })
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).end()
     return
@@ -378,8 +476,14 @@ router.post('/users', (req, res) => {
 
   // we're just returning what they submitted. but we never return the password
   user.id = info.lastInsertRowid
-  user.uri = uri(`/user/${user.id}`)
+  user.uri = USERS_SERVICE(`/user/${user.id}`)
   delete user.password
+
+  log_event({
+    severity: 'Low',
+    type: 'UserCreated',
+    message: `User ${user.id} (name ${user.name}) created.`
+  })
 
   res.set('Location', user.uri)
   res.type('json')

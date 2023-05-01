@@ -7,12 +7,11 @@ const path = require('path');
 
 const { StatusCodes } = require('http-status-codes');
 
-const { Services, MY_SERVICE } = require("./common");
-
+const { Services, MY_SERVICE_NAME } = require("./common");
 
 // App server, basic config, and all the middleware...
 const app = express();
-app.set("title", `Microsocial ${MY_SERVICE} API`);
+app.set("title", `Microsocial ${MY_SERVICE_NAME} API`);
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb',extended: true }));
 app.use(cookieParser())
@@ -44,8 +43,8 @@ fs.readdir("./routes", (err, files) => {
 });
 
 // der main loop
-server = app.listen(Services[MY_SERVICE].port, () => {
-  console.log(`${ MY_SERVICE } service listening on port ${Services[MY_SERVICE].port }...`);
+server = app.listen(Services[MY_SERVICE_NAME].port, () => {
+  console.log(`${ MY_SERVICE_NAME } service listening on port ${Services[MY_SERVICE_NAME].port }...`);
 });
 
 module.exports = app;
