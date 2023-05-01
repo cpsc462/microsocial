@@ -1,14 +1,24 @@
 <script>
+<<<<<<< HEAD
 // @ts-nocheck
     import Button, { Label } from '@smui/button'
     import { goto } from '$app/navigation';
     const handleSignInClick = () => {
         goto('/login')
     }
+=======
+	// @ts-nocheck
+	import { goto } from '$app/navigation';
+	import { user } from '../store';
+
+	const handleSignInClick = () => {
+		goto('/login');
+	};
+>>>>>>> main
 </script>
 
-
 <nav>
+<<<<<<< HEAD
     <div class="container">
         <div>
             <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -18,32 +28,43 @@
             <button on:click={handleSignInClick}>Sign in</button>
         </div>
     </div>
+=======
+	<div class="container">
+		<div>
+			<!-- svelte-ignore a11y-click-events-have-key-events -->
+			<h3 on:click={() => goto('/')}>Microsocial</h3>
+		</div>
+		<div>
+			{#if !$user}
+				<button on:click={handleSignInClick}>Sign in</button>
+			{:else}
+				<h4>{$user.name}</h4>
+			{/if}
+		</div>
+	</div>
+>>>>>>> main
 </nav>
 
-
 <style>
-    nav {
-        box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
-    }
-    
-    .container {
-        display: flex;
-        margin: 0 auto;
-        max-width: 2000px;
-        padding: 0 16px;
-        justify-content: space-between;
-        align-items: center;
-        padding-bottom: 10px;
-    }
+	nav {
+		box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
+	}
 
-    h3 {
-        cursor: pointer;
-    }
+	.container {
+		display: flex;
+		margin: 0 auto;
+		max-width: 2000px;
+		padding: 0 16px;
+		justify-content: space-between;
+		align-items: center;
+		padding-bottom: 10px;
+	}
 
-    h3:hover {
-        color: gray;
-    }
+	h3 {
+		cursor: pointer;
+	}
 
+<<<<<<< HEAD
     button {
         background-color: #2a47e7;
         border: none; 
@@ -57,9 +78,35 @@
         margin: 4px 2px; 
         cursor: pointer;   
     }
+=======
+	h3:hover {
+		color: gray;
+	}
 
-    button:hover {
-        background-color: #4e65eb;
-    }
+	h4 {
+		cursor: pointer;
+	}
 
+	h4:hover {
+		color: gray;
+	}
+>>>>>>> main
+
+	button {
+		background-color: #2a47e7;
+		border: none;
+		color: white;
+		border-radius: 10px;
+		padding: 10px 20px;
+		text-align: center;
+		text-decoration: none;
+		display: inline-block;
+		font-size: 16px;
+		margin: 4px 2px;
+		cursor: pointer;
+	}
+
+	button:hover {
+		background-color: #4e65eb;
+	}
 </style>

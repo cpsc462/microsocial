@@ -73,3 +73,9 @@ VALUES ("<value1>", "<value2>", "<value3>", "<value4>", 0);
 ```
 SELECT * FROM notification WHERE receiver_username="<value2>" AND read=0;
 ```
+# Notification Services:
+- Create a new notification: POST /notifications
+- Retrieve a specific notification: GET /notifications/{notificationId}
+- Update a notification: PUT /notifications/{notificationId}
+- Delete a notification: DELETE /notifications/{notificationId}
+- Retrieve a list of notifications: GET /notifications

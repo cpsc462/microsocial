@@ -8,11 +8,28 @@ const postValidate = ajv.compile(Post)
 const updatePostValidate = ajv.compile(UpdatePost)
 
 export const getAllPosts = async (req, res) => {
+<<<<<<< HEAD
     const q = db.prepare('SELECT * FROM posts')
     const result = q.all()
     return res.status(200).json({
         result: result
     })
+=======
+  const page = parseInt(req.query.page) || 1
+  const pageSize = 10
+  const offset = (page - 1) * pageSize
+
+  const q = db.prepare('SELECT * FROM posts ORDER BY date DESC LIMIT ? OFFSET ? ')
+  const result = q.all(pageSize, offset)
+
+  const count = db.prepare('SELECT COUNT(*) FROM posts').get()['COUNT(*)'];
+  const noOfPages = Math.ceil(count / 10)
+
+  return res.status(200).json({
+    result: result,
+    noOfPages: noOfPages
+  })
+>>>>>>> main
 }
 
 

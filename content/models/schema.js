@@ -8,7 +8,7 @@ export const createDatabase = () => {
         username TEXT NOT NULL,
         title TEXT NOT NULL,
         date DATE,
-        tags TEXT NOT NULL,
+        tags TEXT,
         image TEXT,
         description TEXT
     );`);

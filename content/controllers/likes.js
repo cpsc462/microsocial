@@ -16,6 +16,7 @@ export const likePost = async (req, res) => {
     const check = db.prepare(`SELECT * FROM likesPost WHERE username=? AND post_id=?`)
     const checkRes = check.all(username, post_id)
 
+<<<<<<< HEAD
     if(checkRes.length === 0) {
         const q = db.prepare(`INSERT INTO likesPost(username, post_id) VALUES (?, ?);`)
         q.run(username, post_id)
@@ -26,6 +27,32 @@ export const likePost = async (req, res) => {
         return res.status(204).json({ message: "unliked" })
     }
 
+=======
+    // Send a post method to notification service
+    try {
+      const res = await axios.post(uri('/notification/create', 'Notifications'), {
+        sender_username: username,
+        receiver_username: receiver_username,
+        action: `${username} liked your post`,
+        read: 0
+      })
+      console.log(res)
+    } catch (error) {
+      console.log(error)
+    }
+
+    return res.status(200).json({ message: 'liked', data: {
+      username: username,
+      post_id: post_id
+    } })
+  } else {
+    const q = db.prepare(
+      `DELETE FROM likesPost WHERE username=? AND post_id=?;`
+    )
+    const result = q.run(username, post_id)
+    return res.status(200).json({ message: 'unliked', data: result.lastInsertRowid})
+  }
+>>>>>>> main
 }
 
 export const getPostLike = async (req, res) => {
