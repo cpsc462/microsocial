@@ -136,3 +136,20 @@ describe('GET /content/likes/post/:comment_id', () => {
     expect(res.statusCode).toBe(200)
   })
 })
+
+describe("GET /user/:id/comments", () => {
+  it("should return 200 OK and the user's comments", async () => {
+    const res = await conn.get('/user/1/comments');
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual([
+      { id: 1, content: "Great post!", user_id: 1, post_id: 1 },
+      { id: 2, content: "I disagree", user_id: 1, post_id: 2 },
+      { id: 3, content: "Nice job", user_id: 1, post_id: 3 }
+    ]);
+  });
+  
+  it("should return 404 Not Found for non-existent user ID", async () => {
+    const res = await conn.get('/user/999/comments');
+    expect(res.statusCode).toBe(404);
+  });
+});
