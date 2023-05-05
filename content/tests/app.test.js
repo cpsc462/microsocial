@@ -136,3 +136,17 @@ describe('GET /content/likes/post/:comment_id', () => {
     expect(res.statusCode).toBe(200)
   })
 })
+
+describe('POST /content/posts with missing required field', () => {
+  it('Should return 400 error', async () => {
+    const res = await conn.post('/content/posts').send({
+      username: 'TEST',
+      title: 'TEST',
+      tags: 'TEST',
+      description: 'TEST'
+    })
+    expect(res.statusCode).toBe(400)
+    expect(res.body).toBeDefined()
+    expect(res.body.error).toBe('Missing required field: image')
+  })
+})
