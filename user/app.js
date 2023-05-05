@@ -78,7 +78,7 @@ app.put("/user/:id", (req, res) => {
   const id = parseInt(req.params.id);
   const user = Users.find((u) => u.id === id);
   if (user) {
-    // update user's profile information based on the request body
+    // Update user's profile information based on the request body
     user.name = req.body.name;
     user.pass = req.body.pass;
     res.json(user);
