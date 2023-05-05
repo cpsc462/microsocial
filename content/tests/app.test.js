@@ -98,13 +98,14 @@ describe('POST /content/comments', () => {
 })
 
 describe('GET /content/comments/user/:username', () => {
-  const q = db.prepare(`SELECT (id) FROM comments WHERE username=? AND body=?`)
-  const { id } = q.get('TEST', 'TEST')
-  comment_id = id
-  it('Get a comment by username', async () => {
-    const res = await conn.get(`/content/comments/user/TEST`)
+  it('should return comments by username', async () => {
+    const res = await conn.get('/content/comments/user/TEST')
     expect(res.statusCode).toBe(200)
     expect(res.body.result).toBeDefined()
+
+    const q = db.prepare('SELECT id FROM comments WHERE username = ? AND body = ?')
+    const { id } = q.get('TEST', 'TEST')
+    expect(res.body.result.map(comment => comment.id)).toContain(id)
   })
 })
 
@@ -134,17 +135,5 @@ describe('GET /content/likes/post/:comment_id', () => {
   it('Get a likes by comment id', async () => {
     const res = await conn.get(`/content/likes/comment/1`)
     expect(res.statusCode).toBe(200)
-  })
-})
-
-describe('POST /content/comments', () => {
-  it('Should post a comment', async () => {
-    const res = await conn.post(/content/comments).send({
-      post_id: 1,
-      username: 'TEST',
-      body: 'TEST'
-    })
-    expect(res.statusCode).toBe(201)
-    expect(res.body).toBeDefined()
   })
 })
