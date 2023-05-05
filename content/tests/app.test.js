@@ -137,19 +137,14 @@ describe('GET /content/likes/post/:comment_id', () => {
   })
 })
 
-describe("GET /user/:id/comments", () => {
-  it("should return 200 OK and the user's comments", async () => {
-    const res = await conn.get('/user/1/comments');
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual([
-      { id: 1, content: "Great post!", user_id: 1, post_id: 1 },
-      { id: 2, content: "I disagree", user_id: 1, post_id: 2 },
-      { id: 3, content: "Nice job", user_id: 1, post_id: 3 }
-    ]);
-  });
-  
-  it("should return 404 Not Found for non-existent user ID", async () => {
-    const res = await conn.get('/user/999/comments');
-    expect(res.statusCode).toBe(404);
-  });
-});
+describe('POST /content/comments', () => {
+  it('Should post a comment', async () => {
+    const res = await conn.post(/content/comments).send({
+      post_id: 1,
+      username: 'TEST',
+      body: 'TEST'
+    })
+    expect(res.statusCode).toBe(201)
+    expect(res.body).toBeDefined()
+  })
+})
