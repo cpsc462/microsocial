@@ -83,7 +83,7 @@ app.put("/user/:id", (req, res) => {
     user.pass = req.body.pass;
     res.json(user);
   } else {
-    res.status(404).json({ error: "User not found" });
+    res.status(404).json({ error: "user not found" });
   }
 });
 
