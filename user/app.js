@@ -74,6 +74,19 @@ app.post("/users", (req, res) => {
   res.status(201);
 });
 
+app.put("/user/:id", (req, res) => {
+  const id = parseInt(req.params.id);
+  const user = Users.find((u) => u.id === id);
+  if (user) {
+    // update user's profile information based on the request body
+    user.name = req.body.name;
+    user.pass = req.body.pass;
+    res.json(user);
+  } else {
+    res.status(404).json({ error: "User not found" });
+  }
+});
+
 // end api
 
 app.listen(MY_PORT, () => {
