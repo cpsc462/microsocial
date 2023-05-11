@@ -30,7 +30,7 @@
 <div class="container">
 	<div class="form-wrapper">
 		<form on:submit={handleSubmit}>
-			<h2>Sign In</h2>
+			<h2 style="color: blue;">Sign In</h2>
 			<div>
 				<input type="text" placeholder="username" bind:value={name} />
 			</div>

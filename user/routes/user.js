@@ -10,7 +10,7 @@ var express = require("express");
 var router = express.Router();
 module.exports.router = router;
 
-const { uri } = require("../common");
+const { USERS_SERVICE } = require("../common");
 const { db } = require("../db");
 const { validate } = require("../utils/schema-validation");
 
@@ -45,6 +45,11 @@ router.get("/user/:id", (req, res) => {
 
   errors = validate.UserId(id, "{id}");
   if (errors.length) {
+    log_event({
+      severity: 'Low',
+      type: 'InvalidGet',
+      message: `Get User ${id} failed: validation`
+    })
     res.json(errors);
     res.statusMessage = "No such user";
     res.status(StatusCodes.NOT_FOUND).end();
@@ -55,13 +60,18 @@ router.get("/user/:id", (req, res) => {
   users = stmt.all([id]);
 
   if (users.length < 1) {
+    log_event({
+      severity: 'Low',
+      type: 'GetNoUser',
+      message: `Get ${id} failed: No such User`
+    })
     res.statusMessage = "No such user";
     res.status(StatusCodes.NOT_FOUND).end();
     return;
   }
 
   user = users[0];
-  user.uri = uri(`/user/${user.id}`);
+  user.uri = USERS_SERVICE(`/user/${user.id}`);
   res.json(user);
 });
 
@@ -104,6 +114,11 @@ router.put("/user/:id", (req, res) => {
 
   errors = validate.UserId(id, "{id}");
   if (errors.length) {
+    log_event({
+      severity: 'Low',
+      type: 'NonexistentUserUpdate',
+      message: `Update for User ${id} failed: format`
+    })
     res.json(errors);
     res.statusMessage = "No such user";
     res.status(StatusCodes.NOT_FOUND).end();
@@ -114,6 +129,11 @@ router.put("/user/:id", (req, res) => {
 
   errors = validate.UpdatingUser(updatedUser, "{body}");
   if (errors.length) {
+    log_event({
+      severity: 'Low',
+      type: 'InvalidUserUpdate1',
+      message: `Update for User ${id} failed: ${JSON.stringify(errors)}`
+    })
     res.json(errors);
     res.statusMessage = "Invalid update";
     res.status(StatusCodes.UNPROCESSABLE_ENTITY).end();
@@ -125,6 +145,11 @@ router.put("/user/:id", (req, res) => {
   try {
     info = stmt.run([updatedUser.name, updatedUser.password, id]);
     if (info.changes < 1) {
+      log_event({
+        severity: 'Low',
+        type: 'InvalidUserUpdate2',
+        message: `Update for User ${id} failed.`
+      })
       console.log("update error1: ", { err, info, user });
       res.statusMessage = "Account update failed.";
       res.status(StatusCodes.BAD_REQUEST).end();
@@ -136,6 +161,11 @@ router.put("/user/:id", (req, res) => {
       res.status(StatusCodes.BAD_REQUEST).end();
       return;
     }
+    log_event({
+      severity: 'Low',
+      type: 'InvalidUserUpdate3',
+      message: `Update for User ${id} failed: ${JSON.stringify(err)}`
+    })
     console.log("update error2: ", { err, info, user });
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).end();
     return;
@@ -183,6 +213,11 @@ router.patch("/user/:id", (req, res) => {
 
   errors = validate.UserId(id, "{id}");
   if (errors.length) {
+    log_event({
+      severity: 'Low',
+      type: 'InvalidUserPatch1',
+      message: `Patch for User ${id} failed: No such user`
+    })
     res.json(errors);
     res.statusMessage = "No such user";
     res.status(StatusCodes.NOT_FOUND).end();
@@ -193,6 +228,11 @@ router.patch("/user/:id", (req, res) => {
 
   errors = validate.PatchingUser(updatedUser, "{body}");
   if (errors.length) {
+    log_event({
+      severity: 'Low',
+      type: 'InvalidUserPatch2',
+      message: `Update for User ${id} failed: ${JSON.stringify(errors)}`
+    })
     res.json(errors);
     res.statusMessage = "Invalid update";
     res.status(StatusCodes.UNPROCESSABLE_ENTITY).end();
@@ -220,6 +260,11 @@ router.patch("/user/:id", (req, res) => {
 
     info = stmt.run([...updateParams, id]);
     if (info.changes < 1) {
+      log_event({
+        severity: 'Low',
+        type: 'InvalidUserPatch3',
+        message: `Update for User ${id} failed.`
+      })
       res.statusMessage = "No such user/Error";
       res.status(StatusCodes.NOT_FOUND).end();
       return;
@@ -230,6 +275,11 @@ router.patch("/user/:id", (req, res) => {
       res.status(StatusCodes.BAD_REQUEST).end();
       return;
     }
+    log_event({
+      severity: 'Low',
+      type: 'InvalidUserPatch4',
+      message: `Update for User ${id} failed: ${JSON.stringify(err)}`
+    })
     console.log("update error: ", { err, updatedUser });
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).end();
     return;
@@ -266,6 +316,11 @@ router.delete("/user/:id", (req, res) => {
 
   errors = validate.UserId(id, "{id}");
   if (errors.length) {
+    log_event({
+      severity: 'Low',
+      type: 'DeleteUser1',
+      message: `Delete for User ${id} failed: ${JSON.stringify(errors)}`
+    })
     res.json(errors);
     res.statusMessage = "No such user";
     res.status(StatusCodes.NOT_FOUND).end();
@@ -276,9 +331,20 @@ router.delete("/user/:id", (req, res) => {
 
   info = stmt.run([id]);
   if (info.changes < 1) {
+    log_event({
+      severity: 'Low',
+      type: 'DeleteUser2',
+      message: `Delete for User ${id} failed.`
+    })
     res.statusMessage = "No such user";
     res.status(StatusCodes.NOT_FOUND).end();
     return;
   }
+  log_event({
+    severity: 'Medium',
+    type: 'DeleteUser',
+    message: `Deleted User ${id}.`
+  })
+
   res.status(StatusCodes.NO_CONTENT).end();
 });

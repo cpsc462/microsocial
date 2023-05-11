@@ -4,14 +4,14 @@
  */
 const swaggerJSDoc = require("swagger-jsdoc");
 
-const { MY_SERVICE, uri } = require("../common");
+const { MY_SERVICE, MY_SERVICE_NAME } = require("../common");
 
 const swaggerDefinition = {
   openapi: "3.0.0",
   info: {
-    title: `${MY_SERVICE} Service API`,
+    title: `${MY_SERVICE_NAME} Service API`,
     description: "for Social!",
-    version: "0.1.0",
+    version: "0.2.0",
     contact: {
       name: "Bruce",
       email: "bjmckenz@gmail.com",
@@ -19,7 +19,7 @@ const swaggerDefinition = {
   },
   servers: [
     {
-      url: uri(),
+      url: MY_SERVICE,
     },
   ],
 };

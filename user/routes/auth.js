@@ -1,14 +1,13 @@
+var express = require('express')
+const jsonwebtoken = require('jsonwebtoken')
+const { expressjwt } = require('express-jwt')
 const { StatusCodes } = require('http-status-codes')
 const path = require('path')
-const jsonwebtoken = require('jsonwebtoken')
-var { expressjwt: jwt } = require('express-jwt')
 const { v4: uuidv4 } = require('uuid')
-const { uri, unprotectedPaths } = require('../common')
 const ms = require('ms')
 const dotenv = require('dotenv')
-var express = require('express')
-const { expressjwt } = require('express-jwt')
 
+const { unprotectedPaths, USERS_SERVICE, log_event, returnError } = require('../common')
 const { validate } = require('../utils/schema-validation')
 var { db } = require('../db')
 
@@ -23,7 +22,7 @@ module.exports.appSetCallback = function (theApp) {
 }
 module.exports.router = router
 
-function generateAccessToken(payload) { 
+function generateAccessToken (payload) {
   const theToken = jsonwebtoken.sign(payload, process.env.TOKEN_SECRET, {
     expiresIn: process.env.ACCESS_TOKEN_EXPIRATION
   })
@@ -66,40 +65,40 @@ const generateRefreshToken = function (payload, expiresAt = undefined) {
   return refreshToken.token
 }
 
-function refreshTokenIsExpired(tok) {
+function refreshTokenIsExpired (tok) {
   return new Date(tok.expires_at).getTime() < new Date().getTime()
 }
-function getRefreshTokenById(token_id) {
+function getRefreshTokenById (token_id) {
   const getRefreshTokenSql =
     'SELECT id, user_id, issued, expires FROM refresh_tokens WHERE refresh_token = ?'
 
-    token = db.get(getRefreshTokenSql, [token_id])
+  token = db.get(getRefreshTokenSql, [token_id])
   return token
 }
 
-function deleteRefreshTokensByUser(user_id) {
+function deleteRefreshTokensByUser (user_id) {
   const delete_token_stmt = db.prepare(
     'DELETE FROM refresh_tokens WHERE user_id = ?'
   )
   delete_token_stmt.run(user_id)
 }
 
-function deleteRefreshTokenById(token_id) {
+function deleteRefreshTokenById (token_id) {
   const delete_token_stmt = db.prepare(
     'DELETE FROM refresh_tokens WHERE id = ?'
   )
   delete_token_stmt.run(token_id)
 }
 
-function getUserByNameAndPassword(user_name, user_pass) {
+function getUserByNameAndPassword (user_name, user_pass) {
   const getUserSql =
-    'SELECT id, name FROM users WHERE name = ? AND password = ?';
+    'SELECT id, name FROM users WHERE name = ? AND password = ?'
   user = db.get(getUserSql, [user_name, user_pass])
   return user
 }
 
-function app_setup() {
-  if (process.env.NO_AUTH != 0) {
+function app_setup () {
+  if (parseInt(process.env.NO_AUTH) != 0) {
     return
   }
   app.use(
@@ -155,32 +154,51 @@ router.post('/auth/token', async (req, res) => {
     const errors = validate.RefreshToken({ old_refresh_token_id }, '{body}')
     if (errors.length) {
       console.log('No/bad-format refresh token submitted', old_refresh_token_id)
-      throw new Error(StatusCodes.BAD_REQUEST, 'Login required')
+
+      return returnError(res, {
+          status: StatusCodes.BAD_REQUEST,
+          statusMessage: 'Login required',
+          severity: 'Medium',
+          type: 'BadRefresh',
+          message: `No/Bad refresh token sent from ${req.socket.remoteAddress}.`
+        })
     }
 
     old_refresh_token = getRefreshTokenById(old_refresh_token_id)
     if (old_refresh_token === undefined) {
-      console.log(
-        'Nonexistent (revoked?) refresh token submitted',
-        refresh_token
-      )
-      throw new Error(StatusCodes.UNAUTHORIZED, 'Login required')
+      return returnError(res, {
+        status: StatusCodes.UNAUTHORIZED,
+        statusMessage: 'Login required',
+        severity: 'Medium',
+          type: 'NoRefresh',
+          message: `Nonexistent/revoked refresh token sent from ${req.socket.remoteAddress}.`
+      })
     }
 
     deleteRefreshTokenById(old_refresh_token_id)
 
     if (refreshTokenIsExpired(old_refresh_token)) {
-      console.log('Expired refresh token submitted', old_refresh_token_id)
-      throw new Error(StatusCodes.UNAUTHORIZED, 'Login required')
+      return returnError(res, {
+        status: StatusCodes.UNAUTHORIZED,
+        statusMessage: 'Login required',
+        severity: 'Medium',
+          type: 'ExpiredToken',
+          message: `Expired refresh token ${old_refresh_token_id} sent from ${req.socket.remoteAddress}.`
+      })
     }
   } catch (err) {
-    console.log({err})
-    res.statusMessage = err.message
-    res.status(err.name).end()
-    return
+    return returnError(res, {
+      status: StatusCodes.INTERNAL_SERVER_ERROR,
+      severity: 'High',
+        type: 'UncaughtError',
+        message: err.message
+    })
   }
 
-  const access_token = generateAccessToken({ client_id, session: old_refresh_token.session })
+  const access_token = generateAccessToken({
+    client_id,
+    session: old_refresh_token.session
+  })
   const new_refresh_token = generateRefreshToken(
     { client_id },
     { expiresAt: new Date(old_refresh_token.expires) }
@@ -219,10 +237,13 @@ router.post('/auth/login', async (req, res) => {
 
   const errors = validate.LoginInfo(login_info, '{body}')
   if (errors.length != 0) {
-    res.json({ errors })
-    res.statusMessage = 'Bad login request'
-    res.status(StatusCodes.BAD_REQUEST).end()
-    return
+    return returnError(res, {
+      status: StatusCodes.BAD_REQUEST,
+      statusMessage: 'Bad login request',
+      severity: 'High',
+        type: 'InvalidLoginRequest',
+        message: `Invalid request sent from ${req.socket.remoteAddress}.`
+    })
   }
 
   logged_in_user = getUserByNameAndPassword(
@@ -231,24 +252,35 @@ router.post('/auth/login', async (req, res) => {
   )
 
   if (logged_in_user === undefined) {
-    console.log('Failed login attempt', login_info)
-    res.json([{ message: 'Invalid login' }])
-    res.statusMessage = 'Invalid login'
-    res.status(StatusCodes.UNAUTHORIZED).end()
-    return
+    return returnError(res, {
+      status: StatusCodes.UNAUTHORIZED,
+      statusMessage: 'Invalid login',
+      severity: 'Medium',
+        type: 'FailedLogin',
+        message: `Failed login sent from ${req.socket.remoteAddress} (user '${login_info.name}' submitted)`
+    })
   }
 
   deleteRefreshTokensByUser(logged_in_user.id)
   console.log('Successful login', { logged_in_user })
 
-  const access_token = generateAccessToken({ client_id: logged_in_user.id, session: uuidv4() })
+  log_event({
+    severity: 'Low',
+      type: 'Login',
+      message: `User ${logged_in_user.id} '${logged_in_user.name}' logged in from ${req.socket.remoteAddress}`
+    })
+
+  const access_token = generateAccessToken({
+    client_id: logged_in_user.id,
+    session: uuidv4()
+  })
   const refresh_token = generateRefreshToken({ client_id: logged_in_user.id })
 
   res.json({
     id: logged_in_user.id,
     access_token,
     refresh_token,
-    uri: uri(`/user/${logged_in_user.id}`)
+    uri: USERS_SERVICE(`/user/${logged_in_user.id}`)
   })
   res.status(StatusCodes.OK)
 })

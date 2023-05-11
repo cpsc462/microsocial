@@ -1,6 +1,11 @@
 # Notification Service
 Sync your fork on github and let's work on this later.
 
+# Services:
+- Create a new notification: POST /notifications/create [DONE]
+- Retrieve a specific notification: GET /notifications/retrieve/{receiver_username} [DONE]
+- Update a notification: PUT /notifications/{notificationId} [TODO]
+
 # How to run
 1. Go to your github repository and sync fork
 2. Clone your new fork if haven't or if you already cloned it before cd into it and run
@@ -73,9 +78,46 @@ VALUES ("<value1>", "<value2>", "<value3>", "<value4>", 0);
 ```
 SELECT * FROM notification WHERE receiver_username="<value2>" AND read=0;
 ```
-# Notification Services:
-- Create a new notification: POST /notifications
-- Retrieve a specific notification: GET /notifications/{notificationId}
-- Update a notification: PUT /notifications/{notificationId}
-- Delete a notification: DELETE /notifications/{notificationId}
-- Retrieve a list of notifications: GET /notifications
+
+# How to Test Create API 
+
+1. cd into notificaiton
+   
+```
+cd notification
+```
+
+2. Run your service
+
+```
+npm run dev
+```
+
+3. Go to http://localhost:8004/docs
+
+4. Navigate to Notification API
+
+5. Insert input strings for a notification
+
+6. Verify success in response body
+
+# How to Test Retrieve API 
+
+1. cd into notificaiton
+   
+```
+cd notification
+```
+
+2. Run your service
+
+```
+npm run dev
+```
+3. Go to http://localhost:8004/docs
+
+4. Navigate to Notification API
+
+5. Insert input strings for specific user
+
+6. Verify notifications in response body
