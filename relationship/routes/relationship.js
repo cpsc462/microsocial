@@ -31,7 +31,7 @@ const { validate } = require("../utils/schema-validation");
  *            $ref: '#/components/schemas/RelationshipId'
  *     responses:
  *       200:
- *         description: Relationship Data
+ *         description: Success retrived relationship
  *         content:
  *           application/json:
  *             schema:
@@ -66,179 +66,6 @@ router.get("/relationship/:id", (req, res) => {
 });
 
 /**
- * @swagger
- * /relationship/{id}:
- *   put:
- *     summary: Update Relationship
- *     description: Replace all* fields for one Relationship, by id.
- *     operationId: UpdateRelationshipById
- *     tags: [Relationships API]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         description: Numeric ID of the relationship.
- *         schema:
- *            type: integer
- *     requestBody:
- *       required: true
- *       content:
- *          application/json:
- *            schema:
- *              $ref: '#/components/schemas/UpdatingRelationship'
- *     responses:
- *       200:
- *         description: Relationship Updated (all fields)
- *         content:
- *          application/json:
- *            schema:
- *              $ref: '#/components/schemas/RetrievedRelationship'
- *       400:
- *          description: Invalid update. (Contents not acceptable)
- *       404:
- *          description: No such Relationship
- *          examples: [ "Not Found", "No such relationship" ]
- */
-router.put("/relationship/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-
-  errors = validate.RelationshipId(id, "{id}");
-  if (errors.length) {
-    res.json(errors);
-    res.statusMessage = "No such relationship";
-    res.status(StatusCodes.NOT_FOUND).end();
-    return;
-  }
-
-  const updatedRelationship = req.body;
-
-  errors = validate.RelationshipId(updatedRelationship, "{body}");
-  if (errors.length) {
-    res.json(errors);
-    res.statusMessage = "Invalid update";
-    res.status(StatusCodes.UNPROCESSABLE_ENTITY).end();
-    return;
-  }
-  
-  const stmt = db.prepare(`UPDATE relationships SET user_id=?, following_user_id=? WHERE id=?`);
-
-  try {
-    info = stmt.run([updatedRelationship.name, updatedRelationship.password, id]);
-    if (info.changes < 1) {
-      console.log("update error1: ", { err, info, relationship });
-      res.statusMessage = "Account update failed.";
-      res.status(StatusCodes.BAD_REQUEST).end();
-      return;
-    }
-  } catch (err) {
-    if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
-      res.statusMessage = "Account with name already exists";
-      res.status(StatusCodes.BAD_REQUEST).end();
-      return;
-    }
-    console.log("update error2: ", { err, info, relationship });
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).end();
-    return;
-  }
-
-  res.redirect(`${id}`);
-});
-
-/**
- * @swagger
- * /relationship/{id}:
- *   patch:
- *     summary: (Partially) update Relationship fields
- *     description: Replace any submitted fields for one Relationship, by id.
- *     operationId: PatchRelationshipById
- *     tags: [Relationships API]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         description: Numeric ID of the relationship.
- *         schema:
- *            type: integer
- *     requestBody:
- *       required: true
- *       content:
- *          application/json:
- *            schema:
- *              $ref: '#/components/schemas/PatchingRelationship'
- *     responses:
- *       200:
- *         description: Relationship Updated (submitted fields only, but all fields returned)
- *         content:
- *          application/json:
- *            schema:
- *              $ref: '#/components/schemas/RetrievedRelationship'
- *       400:
- *          description: Invalid update. (Contents not acceptable)
- *       404:
- *          description: Relationship not found
- *          examples: [ "Not Found", "No such relationship" ]
- */
-router.patch("/relationship/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-
-  errors = validate.RelationshipId(id, "{id}");
-  if (errors.length) {
-    res.json(errors);
-    res.statusMessage = "No such relationship";
-    res.status(StatusCodes.NOT_FOUND).end();
-    return;
-  }
-
-  const updatedRelationship = req.body;
-
-  errors = validate.RelationshipId(updatedRelationship, "{body}");
-  if (errors.length) {
-    res.json(errors);
-    res.statusMessage = "Invalid update";
-    res.status(StatusCodes.UNPROCESSABLE_ENTITY).end();
-    return;
-  }
-
-  var info;
-  try {
-    updateClauses = [];
-    updateParams = [];
-
-    if ("name" in updatedRelationship) {
-      updateClauses.push("name = ?");
-      updateParams.push(updatedRelationship.name);
-    }
-
-    if ("password" in updatedRelationship) {
-      updateClauses.push("password = ?");
-      updateParams.push(updatedRelationship.password);
-    }
-
-    const stmt = db.prepare(
-      `UPDATE relationships SET ${updateClauses.join(", ")} WHERE id=?`
-    );
-
-    info = stmt.run([...updateParams, id]);
-    if (info.changes < 1) {
-      res.statusMessage = "No such relationship/Error";
-      res.status(StatusCodes.NOT_FOUND).end();
-      return;
-    }
-  } catch (err) {
-    if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
-      res.statusMessage = "Account with name already exists";
-      res.status(StatusCodes.BAD_REQUEST).end();
-      return;
-    }
-    console.log("update error: ", { err, updatedRelationship });
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).end();
-    return;
-  }
-
-  res.redirect(`${id}`);
-});
-
-/**
 /**
  * @swagger
  * /relationship/{id}:
@@ -257,6 +84,8 @@ router.patch("/relationship/:id", (req, res) => {
  *     responses:
  *       204:
  *         description: Relationship Deleted
+ *       304:
+ *         description: User Tried deleting relationship they did not own
  *       404:
  *          description: No such Relationship
  *          examples: [ "Not Found", "No such relationship" ]
@@ -271,6 +100,8 @@ router.delete("/relationship/:id", (req, res) => {
     res.status(StatusCodes.NOT_FOUND).end();
     return;
   }
+  //TODO: check if user owns the relationship before it is deleted and if they do not own it, return 304
+
 
   const stmt = db.prepare("DELETE FROM relationships where id = ?");
 
@@ -281,4 +112,83 @@ router.delete("/relationship/:id", (req, res) => {
     return;
   }
   res.status(StatusCodes.NO_CONTENT).end();
+});
+/**
+ * @swagger
+ * /relationships:
+ *   post:
+ *     summary: Create Relationship
+ *     description: Create a new Relationship
+ *     operationId: CreateRelationship
+ *     tags: [Relationships API]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/CreatingRelationship'
+ *     responses:
+ *       201:
+ *         description: Relationship Created
+ *         content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/RetrievedRelationship'
+ *         links:
+ *            'Retrieving relationships':
+ *              operationId: GetRelationshipById
+ *              parameters:
+ *                id: '$response.body#/id'
+ *              description: >
+ *                The `id` value returned in the response can be used as
+ *                the `id` parameter in `GET /relationship/{id}`.
+ *            'Deleting a Relationship':
+ *              operationId: DeleteRelationshipById
+ *              parameters:
+ *                id: '$response.body#/id'
+ *              description: >
+ *                The `id` value returned in the response can be used as
+ *                the `id` parameter in `DEL /relationship/{id}`.
+ *       400:
+ *          description: Relationship data is not acceptable
+ *          examples: [ "Invalid relationship id", 
+ *                "Invalid follower id", 
+ *                "Invalid user_following_id",
+ *                "Relationships with that id already exists" ]
+ */
+router.post("/relationships", (req, res) => {
+  const relationship = req.body;
+
+  errors = validate.CreatingRelationship(relationship, "{body}");
+  if (errors.length) {
+    res.json(errors);
+    res.statusMessage = "Invalid data";
+    res.status(StatusCodes.UNPROCESSABLE_ENTITY).end();
+    return;
+  }
+
+  const stmt = db.prepare(`INSERT INTO relationships (user_id, following_user_id)
+                 VALUES (?, ?)`);
+
+  try {
+    info = stmt.run([relationship.user_id, relationship.following_user_id]);
+  } catch (err) {
+    if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
+      res.statusMessage = "Relationship already exists";
+      res.status(StatusCodes.BAD_REQUEST).end();
+      return;
+    }
+    console.log("insert error: ", { err, info, user });
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).end();
+    return;
+  }
+
+  // we're just returning what they submitted. but we never return the password
+  relationship.id = info.lastInsertRowid;
+  relationship.uri = uri(`/relationship/${relationship.id}`);
+
+  res.set('Location', relationship.uri);
+  res.type('json');
+  res.json(relationship);
+  res.status(StatusCodes.CREATED);
 });

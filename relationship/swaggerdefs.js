@@ -1,4 +1,5 @@
 /**
+/**
  * @swagger
  * tags: 
  *    - name: Examples
@@ -46,20 +47,28 @@
  *           format: password
  *           description: URI to this object. Set by API at User creation.
  * 
- *       CreatingRelationship:
- *         type: object
- *         required:
- *           - user_id
- *           - following_user_id
- *         properties:
- *           user_id:
- *             type: integer
- *             minimum: 1
+ *     CreatingRelationship:
+ *       type: object
+ *       required:
+ *         - user_id
+ *         - following_user_id
+ *       properties:
+ *         user_id:
+ *           type: integer
+ *           minimum: 1
  *           description: corresponding user id
- *           following_user_id:
- *             type: integer
- *             minimum: 1
- *             description: user id from user thats being followed
- *     
+ *         following_user_id:
+ *           type: integer
+ *           minimum: 1
+ *           description: user id from user that's being followed
  * 
+ *     RetrievedRelationship:
+ *       type: object
+ *       required:
+ *         - relationship_id
+ *       properties:
+ *         relationship_id:
+ *           type: integer
+ *           minimum: 1
+ *           description: corresponding relationship id being retrieved
  */

@@ -53,6 +53,40 @@ router.get("/message/:id", (req, res) => {
 
   if (message.length < 1) {
     //TODO: error event here
+  // Define a custom exception class
+  class MessagingAPIError extends Error {}
+
+  // Define a helper function to create an event object
+  function createEvent(eventType, message) {
+    return {
+      type: eventType,
+      message: message
+    };
+  }
+
+  // Define a function to send a message
+  function sendMessage(message) {
+    if (!message) {
+      // If the message is empty, throw a MessagingAPIError and create an error event
+      const errorEvent = createEvent('error', 'Cannot send an empty message');
+      throw new MessagingAPIError(errorEvent.message);
+    }
+
+    // Otherwise, send the message and create a success event
+    const successEvent = createEvent('success', message);
+    console.log(`Message sent: ${message}`);
+  }
+
+  // Call the sendMessage function and handle any errors
+  try {
+    sendMessage('Hello, world!');
+    sendMessage('');
+  } catch (e) {
+    // If a MessagingAPIError is thrown, handle the error and log the error event
+    const errorEvent = createEvent('error', e.message);
+    console.log(errorEvent);
+  }
+
     res.statusMessage = "No such message";
     res.status(StatusCodes.NOT_FOUND).end();
     return;
@@ -167,13 +201,22 @@ router.delete("/message/:del_message_id", (req, res) => {
 router.put("/message/:message_id", (req, res) => {
 
   let messageId = req.params.message_id.trim();
+  let author = req.body.author;
   let content = req.body.content;//.trim();
   content = bleach.sanitize(content);
-  //TODO: should check for valid author as well
+  
   let message={content:NaN}
   let getstmt = db.prepare(`SELECT id, thread, author, timestamp, content FROM messages where id = ?`);
   message=getstmt.all([messageId])[0];
-  message.content = msgContent;
+
+  if(message.author != author) {
+    console.log("No Author")
+    res.statusMessage="No Author entered"
+    res.status(StatusCodes.EXPECTATION_FAILED).end()
+    return;
+  }
+
+  message.content = content;
   let current_time = Date.now();
   message.lastedit = current_time;
 
@@ -185,7 +228,7 @@ router.put("/message/:message_id", (req, res) => {
   } catch (err) {
     //TODO: error event here
     console.log("insert error: ", { err, info, message });
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).end();
+    res.status(StatusCodes.UNAUTHORIZED).end();
     return;
   }
 
