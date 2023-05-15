@@ -592,11 +592,11 @@ router.post('/users', (req, res) => {
     return
   }
 
-  const stmt = db.prepare(`INSERT INTO users (name, password)
-                 VALUES (?, ?)`)
+  const stmt = db.prepare(`INSERT INTO users (name, password, email)
+                 VALUES (?, ?, ?)`)
 
   try {
-    info = stmt.run([user.name, user.password])
+    info = stmt.run([user.name, user.password, user.email])
   } catch (err) {
     if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
       log_event({
@@ -612,17 +612,18 @@ router.post('/users', (req, res) => {
     log_event({
       severity: 'Low',
       type: 'CannotCreateUser',
-      message: `Create ${[ser.name, user.password]} failed: ${err}`
+      message: `Create ${[ser.name, user.password, user.email]} failed: ${err}`
     })
     console.log('insert error: ', { err, info, user })
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).end()
     return
   }
 
-  // we're just returning what they submitted. but we never return the password
+  // we're just returning what they submitted. but we never return the password or email
   user.id = info.lastInsertRowid
   user.uri = USERS_SERVICE(`/user/${user.id}`)
   delete user.password
+  delete user.email
 
   log_event({
     severity: 'Low',
