@@ -8,6 +8,33 @@ db.exec(`CREATE TABLE IF NOT EXISTS users (
         password TEXT NOT NULL,
         versionkey INTEGER NOT NULL DEFAULT 1
     );`)
+
+
+db.exec(`CREATE TABLE IF NOT EXISTS user_2fa (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    two_factor_type STRING
+);`)
+
+
+db.exec(`CREATE TABLE IF NOT EXISTS email_address (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    email STRING
+);`)
+
+db.exec(`CREATE TABLE IF NOT EXISTS phone (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    phone_number STRING
+);`)
+
+db.exec(`CREATE TABLE IF NOT EXISTS recovery_email (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    recovery STRING
+);`)
+
 db.exec(`CREATE TABLE IF NOT EXISTS users_result_sets (
         set_id INTEGER PRIMARY KEY AUTOINCREMENT,
         set_session_id TEXT,
