@@ -88,7 +88,7 @@ router.put('/users/email', (req, res) => {
  *       200:
  *         description: Get two factor authentication type
  *       404:
- *         description: email address type not found.
+ *         description: Email address type not found.
  */
 router.get('/user/email/:user_id', (req, res) => {
     const { user_id } = req.params;
