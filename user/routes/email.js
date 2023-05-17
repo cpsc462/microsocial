@@ -1,4 +1,4 @@
-// options: none, auth, call, sms
+// user sets their email for their account
 
 var express = require('express');
 var router = express.Router();
@@ -7,9 +7,9 @@ var { db } = require('../db');
 
 /**
  * @swagger
- * /users/2FA:
+ * /users/email:
  *   post:
- *     summary: Set (post) preferred 2FA method
+ *     summary: Set (post) user email address
  *     tags: [Users API]
  *     requestBody:
  *       required: true
@@ -20,29 +20,29 @@ var { db } = require('../db');
  *             properties:
  *               user_id:
  *                 type: integer
- *               two_factor_type:
+ *               email:
  *                 type: string
  *     responses:
  *       201:
- *         description: Successfully set 2FA method
+ *         description: Successfully set email address 
  *       400:
  *         description: Invalid
  */
-router.post('/users/2FA', async (req, res) => {
-    const { user_id, two_factor_type } = req.body;
+router.post('/users/email', async (req, res) => {
+    const { user_id, email } = req.body;
     const query = db.prepare(
-      `INSERT INTO user_2fa (user_id, two_factor_type) VALUES(?, ?);`
+      `INSERT INTO email_address (user_id, email) VALUES(?, ?);`
     );
-    query.run(user_id, two_factor_type);
+    query.run(user_id, email);
   
-    res.status(201).json({ message: 'Successfully set 2FA method.' });
+    res.status(201).json({ message: 'Successfully set email address.' });
 });
 
 /**
  * @swagger
- * /users/2FA:
+ * /users/email:
  *   put:
- *     summary: Update a 2FA!
+ *     summary: Update a email address
  *     tags: [Users API]
  *     requestBody:
  *       required: true
@@ -53,30 +53,30 @@ router.post('/users/2FA', async (req, res) => {
  *             properties:
  *               user_id:
  *                 type: integer
- *               two_factor_type:
+ *               email:
  *                 type: string
  *     responses:
  *       201:
- *         description: Successfully updated 2FA method
+ *         description: Successfully updated email address
  *       400:
  *         description: Invalid input data
  */
-router.put('/users/2FA', (req, res) => {
-    const { user_id, two_factor_type } = req.body;
-    const query = db.prepare(`UPDATE user_2fa SET two_factor_type=? WHERE user_id=?`);
-    const result = query.run(two_factor_type, user_id).changes;
+router.put('/users/email', (req, res) => {
+    const { user_id, email } = req.body;
+    const query = db.prepare(`UPDATE email_address SET email=? WHERE user_id=?`);
+    const result = query.run(email, user_id).changes;
   
     if (result > 0) 
-        res.status(204).json({ message: 'Successfully updated 2FA method' });
+        res.status(204).json({ message: 'Successfully updated email address' });
     else 
         res.status(400).json({ error: 'User ID not found' });
 });
 
 /**
  * @swagger
- * /user/2FA/{user_id}:
+ * /user/email/{user_id}:
  *   get:
- *     summary: Get two factor authentication type!
+ *     summary: Get user info including email address from ID
  *     parameters:
  *       - name: user_id
  *         in: path
@@ -88,14 +88,14 @@ router.put('/users/2FA', (req, res) => {
  *       200:
  *         description: Get two factor authentication type
  *       404:
- *         description: 2FA type not found.
+ *         description: email address type not found.
  */
-router.get('/user/2FA/:user_id', (req, res) => {
+router.get('/user/email/:user_id', (req, res) => {
     const { user_id } = req.params;
     if (!user_id) 
         return res.status(400).json({ error: "User ID not found" });
 
-    const query = db.prepare(`SELECT * FROM user_2fa WHERE user_id=?`);
+    const query = db.prepare(`SELECT * FROM email_address WHERE user_id=?`);
     const result = query.all(user_id);
   
     return res.status(200).json({ result: result });

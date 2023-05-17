@@ -53,9 +53,21 @@
  *           minLength: 9
  *           maxLength: 15
  *           pattern: '^[0-9]{9,15}$'
- *           description: Phone number for authorization. Tied to auth app as well. 
+ *           description: Phone number. Must be unique.
+ *         email:
+ *           type: string
+ *           minLength: 1
+ *           maxLength: 32
+ *           pattern: '^[A-Za-z0-9_.-@]{1,32}$'
+ *           description: Email that they log in with. Must be unique
+ *         recovery_email:
+ *           type: string
+ *           minLength: 1
+ *           maxLength: 32
+ *           pattern: '^[A-Za-z0-9_.-@]{1,32}$'
+ *           description: Recovery email address that they can restore their access via. Must be unique
  *       examples: [
- *         { id: 1, name: "alonzo", password: "lambda", uri: "http://lh:8/user/14", phone: "1347455420" }
+ *         { id: 1, name: "alonzo", password: "lambda", uri: "http://lh:8/user/14", phone: "1347455420", email: "rex@brucehou.se", recovery_email: "alexanddylanrock@sickaf.com" }
  *       ]
  * 
  *     LoginInfo:

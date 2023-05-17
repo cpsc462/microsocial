@@ -1,4 +1,4 @@
-// options: none, auth, call, sms
+// user sets their phone number for their account
 
 var express = require('express');
 var router = express.Router();
@@ -7,9 +7,9 @@ var { db } = require('../db');
 
 /**
  * @swagger
- * /users/2FA:
+ * /users/phone:
  *   post:
- *     summary: Set (post) preferred 2FA method
+ *     summary: Set (post) user phone number
  *     tags: [Users API]
  *     requestBody:
  *       required: true
@@ -20,29 +20,29 @@ var { db } = require('../db');
  *             properties:
  *               user_id:
  *                 type: integer
- *               two_factor_type:
+ *               phone_number:
  *                 type: string
  *     responses:
  *       201:
- *         description: Successfully set 2FA method
+ *         description: Successfully set phone number 
  *       400:
  *         description: Invalid
  */
-router.post('/users/2FA', async (req, res) => {
-    const { user_id, two_factor_type } = req.body;
+router.post('/users/phone', async (req, res) => {
+    const { user_id, phone_number } = req.body;
     const query = db.prepare(
-      `INSERT INTO user_2fa (user_id, two_factor_type) VALUES(?, ?);`
+      `INSERT INTO phone (user_id, phone_number) VALUES(?, ?);`
     );
-    query.run(user_id, two_factor_type);
+    query.run(user_id, phone_number);
   
-    res.status(201).json({ message: 'Successfully set 2FA method.' });
+    res.status(201).json({ message: 'Successfully set phone number.' });
 });
 
 /**
  * @swagger
- * /users/2FA:
+ * /users/phone:
  *   put:
- *     summary: Update a 2FA!
+ *     summary: Update a phone number
  *     tags: [Users API]
  *     requestBody:
  *       required: true
@@ -53,30 +53,30 @@ router.post('/users/2FA', async (req, res) => {
  *             properties:
  *               user_id:
  *                 type: integer
- *               two_factor_type:
+ *               phone_number:
  *                 type: string
  *     responses:
  *       201:
- *         description: Successfully updated 2FA method
+ *         description: Successfully updated phone number
  *       400:
  *         description: Invalid input data
  */
-router.put('/users/2FA', (req, res) => {
-    const { user_id, two_factor_type } = req.body;
-    const query = db.prepare(`UPDATE user_2fa SET two_factor_type=? WHERE user_id=?`);
-    const result = query.run(two_factor_type, user_id).changes;
+router.put('/users/phone', (req, res) => {
+    const { user_id, phone_number } = req.body;
+    const query = db.prepare(`UPDATE phone SET phone_number=? WHERE user_id=?`);
+    const result = query.run(phone_number, user_id).changes;
   
     if (result > 0) 
-        res.status(204).json({ message: 'Successfully updated 2FA method' });
+        res.status(204).json({ message: 'Successfully updated phone number' });
     else 
         res.status(400).json({ error: 'User ID not found' });
 });
 
 /**
  * @swagger
- * /user/2FA/{user_id}:
+ * /user/phone/{user_id}:
  *   get:
- *     summary: Get two factor authentication type!
+ *     summary: Get user info including phone number from ID
  *     parameters:
  *       - name: user_id
  *         in: path
@@ -88,14 +88,14 @@ router.put('/users/2FA', (req, res) => {
  *       200:
  *         description: Get two factor authentication type
  *       404:
- *         description: 2FA type not found.
+ *         description: phone number type not found.
  */
-router.get('/user/2FA/:user_id', (req, res) => {
+router.get('/user/phone/:user_id', (req, res) => {
     const { user_id } = req.params;
     if (!user_id) 
         return res.status(400).json({ error: "User ID not found" });
 
-    const query = db.prepare(`SELECT * FROM user_2fa WHERE user_id=?`);
+    const query = db.prepare(`SELECT * FROM phone WHERE user_id=?`);
     const result = query.all(user_id);
   
     return res.status(200).json({ result: result });
