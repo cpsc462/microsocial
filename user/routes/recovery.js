@@ -5,6 +5,11 @@ var router = express.Router();
 module.exports.router = router;
 var { db } = require('../db');
 
+function validate_email(email) {
+    var emailPattern = /^[A-Za-z0-9._-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,3}$/;
+    return emailPattern.test(email); // check validity, test() returns true or false
+  }  
+
 /**
  * @swagger
  * /users/recovery:
@@ -30,6 +35,12 @@ var { db } = require('../db');
  */
 router.post('/users/recovery', async (req, res) => {
     const { user_id, recovery } = req.body;
+   
+    if(!validate_email(recovery)) {
+        res.status(400).json({ error: 'Email not valid, must be in the format name_1.2@domain.tld' });
+        return;
+    }
+
     const query = db.prepare(
       `INSERT INTO recovery_email (user_id, recovery) VALUES(?, ?);`
     );
@@ -63,6 +74,12 @@ router.post('/users/recovery', async (req, res) => {
  */
 router.put('/users/recovery', (req, res) => {
     const { user_id, recovery } = req.body;
+
+    if(!validate_email(recovery)) {
+        res.status(400).json({ error: 'Email not valid, must be in the format name_1.2@domain.tld' });
+        return;
+    }
+
     const query = db.prepare(`UPDATE recovery_email SET recovery=? WHERE user_id=?`);
     const result = query.run(recovery, user_id).changes;
   
