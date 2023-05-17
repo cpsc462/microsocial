@@ -5,6 +5,18 @@ var router = express.Router();
 module.exports.router = router;
 var { db } = require('../db');
 
+function validate_2fa_option(two_factor_input){
+    let valid = false;
+
+    if(two_factor_input.toLowerCase() == "sms"
+       || two_factor_input.toLowerCase() == "auth"
+       || two_factor_input.toLowerCase() == "call"
+       || two_factor_input.toLowerCase() == "none")
+       valid = true;
+
+    return valid;
+}
+
 /**
  * @swagger
  * /users/2FA:
@@ -30,11 +42,17 @@ var { db } = require('../db');
  */
 router.post('/users/2FA', async (req, res) => {
     const { user_id, two_factor_type } = req.body;
+
+    if(!validate_2fa_option(two_factor_type)) {// if not valid, returns false -> exits
+        res.status(400).json({ error: 'Not a valid 2FA method. Must be either "SMS", "auth", "call", or "none" (not case-sensitive).' });
+        return;
+    }
+  
     const query = db.prepare(
       `INSERT INTO user_2fa (user_id, two_factor_type) VALUES(?, ?);`
     );
     query.run(user_id, two_factor_type);
-  
+
     res.status(201).json({ message: 'Successfully set 2FA method.' });
 });
 
@@ -63,6 +81,12 @@ router.post('/users/2FA', async (req, res) => {
  */
 router.put('/users/2FA', (req, res) => {
     const { user_id, two_factor_type } = req.body;
+
+    if(!validate_2fa_option(two_factor_type)) {// if not valid, returns false -> exits
+        res.status(400).json({ error: 'Not a valid 2FA method. Must be either "SMS", "auth", "call", or "none" (not case-sensitive).' });
+        return;
+    }
+
     const query = db.prepare(`UPDATE user_2fa SET two_factor_type=? WHERE user_id=?`);
     const result = query.run(two_factor_type, user_id).changes;
   

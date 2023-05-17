@@ -5,6 +5,11 @@ var router = express.Router();
 module.exports.router = router;
 var { db } = require('../db');
 
+function validate_phone_number(phone) {
+    var phone_pattern = /^[0-9]{9,15}$/;
+    return phone_pattern.test(phone); // check validity, test() returns true or false
+  }  
+
 /**
  * @swagger
  * /users/phone:
@@ -30,6 +35,12 @@ var { db } = require('../db');
  */
 router.post('/users/phone', async (req, res) => {
     const { user_id, phone_number } = req.body;
+
+    if(!validate_phone_number(phone_number)){
+        res.status(400).json({ error: 'Invalid phone number. Must be only digits 0-9, at least 9 digits, and at most 15 digits long.' });
+        return;
+    }
+
     const query = db.prepare(
       `INSERT INTO phone (user_id, phone_number) VALUES(?, ?);`
     );
@@ -63,6 +74,12 @@ router.post('/users/phone', async (req, res) => {
  */
 router.put('/users/phone', (req, res) => {
     const { user_id, phone_number } = req.body;
+
+    if(!validate_phone_number(phone_number)){
+        res.status(400).json({ error: 'Invalid phone number. Must be only digits 0-9, at least 9 digits, and at most 15 digits long.' });
+        return;
+    }
+
     const query = db.prepare(`UPDATE phone SET phone_number=? WHERE user_id=?`);
     const result = query.run(phone_number, user_id).changes;
   

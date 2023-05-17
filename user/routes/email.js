@@ -6,8 +6,8 @@ module.exports.router = router;
 var { db } = require('../db');
 
 function validate_email(email) {
-    var emailPattern = /^[A-Za-z0-9._-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,3}$/;
-    return emailPattern.test(email); // check validity, test() returns true or false
+    var email_pattern = /^(?=.{1,32}$)[A-Za-z0-9._-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,3}$/;
+    return email_pattern.test(email); // check validity, test() returns true or false
   }  
 
 /**
@@ -37,7 +37,7 @@ router.post('/users/email', async (req, res) => {
     const { user_id, email } = req.body;
     
     if(!validate_email(email)) {
-        res.status(400).json({ error: 'Email not valid, must be in the format name_1.2@domain.tld' });
+        res.status(400).json({ error: 'Email not valid, must be in the format name_1.2@domain.tld and may not exceed 32 characters, inclusive.' });
         return;
     }
 
@@ -45,10 +45,7 @@ router.post('/users/email', async (req, res) => {
       `INSERT INTO email_address (user_id, email) VALUES(?, ?);`
     );
     query.run(user_id, email);
-    if(!validate_email(email))
-        res.status(400).json({ error: 'Email not valid, must be in the format name_1.2@domain.tld' });
-    else
-       res.status(201).json({ message: 'Successfully set email address.' });
+    res.status(201).json({ message: 'Successfully set email address.' });
 });
 
 /**
@@ -78,7 +75,7 @@ router.put('/users/email', (req, res) => {
     const { user_id, email } = req.body;
     
     if(!validate_email(email)) {
-        res.status(400).json({ error: 'Email not valid, must be in the format name_1.2@domain.tld' });
+        res.status(400).json({ error: 'Email not valid, must be in the format name_1.2@domain.tld and may not exceed 32 characters, inclusive.' });
         return;
     }
     
