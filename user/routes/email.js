@@ -5,6 +5,11 @@ var router = express.Router();
 module.exports.router = router;
 var { db } = require('../db');
 
+function validate_email(email) {
+    var emailPattern = /^[A-Za-z0-9._-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,3}$/;
+    return emailPattern.test(email); // check validity, test() returns true or false
+  }  
+
 /**
  * @swagger
  * /users/email:
@@ -30,12 +35,20 @@ var { db } = require('../db');
  */
 router.post('/users/email', async (req, res) => {
     const { user_id, email } = req.body;
+    
+    if(!validate_email(email)) {
+        res.status(400).json({ error: 'Email not valid, must be in the format name_1.2@domain.tld' });
+        return;
+    }
+
     const query = db.prepare(
       `INSERT INTO email_address (user_id, email) VALUES(?, ?);`
     );
     query.run(user_id, email);
-  
-    res.status(201).json({ message: 'Successfully set email address.' });
+    if(!validate_email(email))
+        res.status(400).json({ error: 'Email not valid, must be in the format name_1.2@domain.tld' });
+    else
+       res.status(201).json({ message: 'Successfully set email address.' });
 });
 
 /**
@@ -63,6 +76,12 @@ router.post('/users/email', async (req, res) => {
  */
 router.put('/users/email', (req, res) => {
     const { user_id, email } = req.body;
+    
+    if(!validate_email(email)) {
+        res.status(400).json({ error: 'Email not valid, must be in the format name_1.2@domain.tld' });
+        return;
+    }
+    
     const query = db.prepare(`UPDATE email_address SET email=? WHERE user_id=?`);
     const result = query.run(email, user_id).changes;
   
