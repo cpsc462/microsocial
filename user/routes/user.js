@@ -253,6 +253,11 @@ router.patch("/user/:id", (req, res) => {
       updateClauses.push("password = ?");
       updateParams.push(updatedUser.password);
     }
+    
+    if("email" in updatedUser) {
+      updateClauses.push("email = ?");
+      updateParams.push(updatedUser.email);
+    }
 
     const stmt = db.prepare(
       `UPDATE users SET ${updateClauses.join(", ")} WHERE id=?`
