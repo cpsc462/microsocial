@@ -56,7 +56,7 @@ router.get("/user/:id", (req, res) => {
     return;
   }
 
-  const stmt = db.prepare("SELECT id,name FROM users where id = ?");
+  const stmt = db.prepare("SELECT id,name, email, recov_email, phone_number, country FROM users where id = ?");
   users = stmt.all([id]);
 
   if (users.length < 1) {
@@ -140,10 +140,10 @@ router.put("/user/:id", (req, res) => {
     return;
   }
 
-  const stmt = db.prepare(`UPDATE users SET name=?, password=? WHERE id=?`);
+  const stmt = db.prepare(`UPDATE users SET name=?, password=?, email=?, recov_email=?, phone_number=?, country=? WHERE id=?`);
 
   try {
-    info = stmt.run([updatedUser.name, updatedUser.password, id]);
+    info = stmt.run([updatedUser.name, updatedUser.password, updatedUser.email, updatedUser.recov_email, updatedUser.country, updatedUser.phone_number,  id]);
     if (info.changes < 1) {
       log_event({
         severity: 'Low',
@@ -155,9 +155,50 @@ router.put("/user/:id", (req, res) => {
       res.status(StatusCodes.BAD_REQUEST).end();
       return;
     }
+    //email regex check
+    if (!/^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(updatedUser.email)) {
+      throw new Error('Invalid email format');
+    }
+    if (!/^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(updatedUser.recov_email)) {
+      throw new Error('Invalid recovery email format');
+    }
+    if (!/^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/.test(updatedUser.recov_email)) {
+    throw new Error('Invalid phone number format');
+    }
   } catch (err) {
-    if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
+    // unique user name check
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' && err.message.includes('name')) {
       res.statusMessage = "Account with name already exists";
+      res.status(StatusCodes.BAD_REQUEST).end();
+      return;
+    }
+    // unique email check
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' && err.message.includes('email')) {
+      res.statusMessage = "Account with email already exists";
+      res.status(StatusCodes.BAD_REQUEST).end();
+      return;
+    }
+    // unique phone number check
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' && err.message.includes('phone_number')) {
+      res.statusMessage = "Account with phone number already exists";
+      res.status(StatusCodes.BAD_REQUEST).end();
+      return;
+    }
+    // email follows regex above
+    if (err.message.includes("Invalid email format")) {
+      res.statusMessage = "Invalid email";
+      res.status(StatusCodes.BAD_REQUEST).end();
+      return;
+    }
+    // recovery email follows regex above
+    if (err.message.includes("Invalid recovery email format")) {
+      res.statusMessage = "Invalid recovery email";
+      res.status(StatusCodes.BAD_REQUEST).end();
+      return;
+    }
+    // phone number follows regex above
+    if (err.message.includes("Invalid phone number format")) {
+      res.statusMessage = "Invalid recovery email";
       res.status(StatusCodes.BAD_REQUEST).end();
       return;
     }
@@ -254,6 +295,35 @@ router.patch("/user/:id", (req, res) => {
       updateParams.push(updatedUser.password);
     }
 
+    if ("email" in updatedUser) {
+    //email regex check
+      if (!/^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(updatedUser.email)) {
+        throw new Error('Invalid email format');
+      }
+        updateClauses.push("email = ?");
+        updateParams.push(updatedUser.email);
+    }
+
+    if ("recov_email" in updatedUser) {
+      if (!/^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(updatedUser.recov_email)) {
+        throw new Error('Invalid recovery email format');
+      }
+      updateClauses.push("recov_email = ?");
+      updateParams.push(updatedUser.password);
+    }
+
+    if ("phone_number" in updatedUser) {
+      if (!/^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/.test(updatedUser.phone_number)) {
+        throw new Error('Invalid phone number format');
+      }
+      updateClauses.push("password = ?");
+      updateParams.push(updatedUser.phone_number);
+    }
+
+    if ("country" in updatedUser) {
+      updateClauses.push("country = ?");
+      updateParams.push(updatedUser.country);
+    }
     const stmt = db.prepare(
       `UPDATE users SET ${updateClauses.join(", ")} WHERE id=?`
     );
@@ -270,8 +340,36 @@ router.patch("/user/:id", (req, res) => {
       return;
     }
   } catch (err) {
-    if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
+    // unique user name check
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' && err.message.includes('name')) {
       res.statusMessage = "Account with name already exists";
+      res.status(StatusCodes.BAD_REQUEST).end();
+      return;
+    }
+    
+    // unique email check
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' && err.message.includes('email')) {
+      res.statusMessage = "Account with email already exists";
+      res.status(StatusCodes.BAD_REQUEST).end();
+      return;
+    }
+
+    // email follows regex above
+    if (err.message.includes("Invalid email format")) {
+      res.statusMessage = "Invalid email";
+      res.status(StatusCodes.BAD_REQUEST).end();
+      return;
+    }
+
+    // email follows regex above
+    if (err.message.includes("Invalid recovery email format")) {
+      res.statusMessage = "Invalid recovery email";
+      res.status(StatusCodes.BAD_REQUEST).end();
+      return;
+    }
+    // phone number follows regex above
+    if (err.message.includes("Invalid phone number format")) {
+      res.statusMessage = "Invalid phone number";
       res.status(StatusCodes.BAD_REQUEST).end();
       return;
     }

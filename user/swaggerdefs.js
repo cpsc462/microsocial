@@ -25,6 +25,8 @@
  *         - id
  *         - name
  *         - password
+ *         - email
+ *         - phone_number
  *       properties:
  *         id:
  *           type: integer
@@ -42,11 +44,31 @@
  *           minLength: 4
  *           format: password
  *           description: No leading or trailing spaces. Never returned by an API.
+ *         email:
+ *           type: string
+ *           minLength: 1
+ *           format: '^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]'
+ *           description: Email address attached to the account. Must be unique.
+ *         recov_email:
+ *           type: string
+ *           minLength: 1
+ *           format: '^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]'
+ *           description: recov email address attached to the account. Must be unique.
  *         uri:
  *           type: string
  *           readOnly: true
  *           format: password
  *           description: URI to this object. Set by API at User creation.
+ *         phone_number:
+ *           type: string
+ *           minLength: 1
+ *           format: '^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$'
+ *           description: Email address attached to the account. Must be unique.
+ *         country:
+ *           type: string
+ *           minLength: 1
+ *           format: country
+ *           description: Country.
  *       examples: [
  *         { id: 1, name: "alonzo", password: "lambda", uri: "http://lh:8/user/14" }
  *       ]
@@ -119,6 +141,26 @@
  *           maxLength: 32
  *           pattern: '^[A-Za-z0-9_.-]{1,32}$'
  *           description: Name that they log in with. Must be unique
+ *         email:
+ *           type: string
+ *           minLength: 1
+ *           format: '^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]'
+ *           description: Email address attached to the account. Must be unique.
+ *         recov_email:
+ *           type: string
+ *           minLength: 1
+ *           format: '^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]'
+ *           description: Email address attached to the account. Must be unique.
+ *         phone_number:
+ *           type: string
+ *           minLength: 1
+ *           format: '^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$'
+ *           description: Email address attached to the account. Must be unique.
+ *         country:
+ *           type: string
+ *           minLength: 1
+ *           format: country
+ *           description: Country.
  *         uri:
  *           type: string
  *           readOnly: true
@@ -134,6 +176,8 @@
  *       required:
  *         - name
  *         - password
+ *         - email
+ *         - phone_number
  *       properties:
  *         name:
  *           type: string
@@ -146,6 +190,26 @@
  *           minLength: 4
  *           format: password
  *           description: Guess. No leading or trailing spaces. Never returned by an API.
+ *         country:
+ *           type: string
+ *           minLength: 1
+ *           format: country
+ *           description: Country.
+ *         recov_email:
+ *           type: string
+ *           minLength: 1
+ *           format: '^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]'
+ *           description: recov email address attached to the account. Must be unique.
+ *         email:
+ *           type: string
+ *           minLength: 1
+ *           format: '^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]'
+ *           description: Email address attached to the account. Must be unique.
+ *         phone_number:
+ *           type: string
+ *           minLength: 1
+ *           format: '^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$'
+ *           description: Email address attached to the account. Must be unique.
  *       examples: [
  *         { name: "alonzo", password: "lambda" }
  *       ]
@@ -157,6 +221,8 @@
  *       required:
  *         - name
  *         - password
+ *         - email
+ *         - phone_number
  *       properties:
  *         name:
  *           type: string
@@ -164,12 +230,31 @@
  *           maxLength: 32
  *           pattern: '^[A-Za-z0-9_.-]{1,32}$'
  *           description: Name that they log in with. Must be unique
+ *         email:
+ *           type: string
+ *           minLength: 1
+ *           format: '^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]'
+ *           description: Email address attached to the account. Must be unique.
+ *         country:
+ *           type: string
+ *           minLength: 1
+ *           format: country
+ *           description: Country.
  *         password:
  *           type: string
  *           minLength: 4
  *           format: password
  *           description: Guess. No leading or trailing spaces. Never returned by an API. description Columns to sort by, separated by commas. Names are case-insensitive. Sorts are ascending unless a "-" is given. "+" is accepted but is unnecessary. Acceptable columns are id and name.
-
+ *         recov_email:
+ *           type: string
+ *           minLength: 1
+ *           format: '^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]'
+ *           description: recov email address attached to the account. Must be unique. 
+ *         phone_number:
+ *           type: string
+ *           minLength: 1
+ *           format: '^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$'
+ *           description: Email address attached to the account. Must be unique.
  *       examples: [
  *         { name: "alonzo", password: "lambda" }
  *         ]
@@ -183,11 +268,31 @@
  *           maxLength: 32
  *           pattern: '^[A-Za-z0-9_.-]{1,32}$'
  *           description: Name that they log in with. Must be unique
+ *         country:
+ *           type: string
+ *           minLength: 1
+ *           format: country
+ *           description: Country.
  *         password:
  *           type: string
  *           minLength: 4
  *           format: password
  *           description: Guess. No leading or trailing spaces. Never returned by an API.
+ *         recov_email:
+ *           type: string
+ *           minLength: 1
+ *           format: '^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]'
+ *           description: recov email address attached to the account. Must be unique. 
+ *         email:
+ *           type: string
+ *           minLength: 1
+ *           format: '^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]'
+ *           description: Email address attached to the account. Must be unique.
+ *         phone_number:
+ *           type: string
+ *           minLength: 1
+ *           format: '^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$'
+ *           description: Email address attached to the account. Must be unique.
  *       examples: [
  *         { name: "alonzo", password: "lambda" }
  *       ]
