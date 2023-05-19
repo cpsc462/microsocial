@@ -56,7 +56,7 @@ router.get("/user/:id", (req, res) => {
     return;
   }
 
-  const stmt = db.prepare("SELECT id,name FROM users where id = ?");
+  const stmt = db.prepare("SELECT id,name,TOU FROM users where id = ?");
   users = stmt.all([id]);
 
   if (users.length < 1) {
@@ -140,10 +140,10 @@ router.put("/user/:id", (req, res) => {
     return;
   }
 
-  const stmt = db.prepare(`UPDATE users SET name=?, password=? WHERE id=?`);
+  const stmt = db.prepare(`UPDATE users SET name=?, password=?, TOU=? WHERE id=?`);
 
   try {
-    info = stmt.run([updatedUser.name, updatedUser.password, id]);
+    info = stmt.run([updatedUser.name, updatedUser.password,updatedUser.TOU, id]);
     if (info.changes < 1) {
       log_event({
         severity: 'Low',
@@ -252,6 +252,11 @@ router.patch("/user/:id", (req, res) => {
     if ("password" in updatedUser) {
       updateClauses.push("password = ?");
       updateParams.push(updatedUser.password);
+    }
+
+    if ("TOU" in updatedUser) {
+      updateClauses.push("TOU = ?");
+      updateParams.push(updatedUser.TOU);
     }
 
     const stmt = db.prepare(

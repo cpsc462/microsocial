@@ -183,11 +183,11 @@ function create_new_result_set (req, session_id) {
     `INSERT INTO users_result_sets ` +
     `(set_querying_user_id, set_results_as_of, set_session_id, ` +
     `set_rownum, ` +
-    `id, name, versionkey) ` +
+    `id, name, TOU, versionkey) ` +
     `SELECT ` +
     `?,?,?,` +
     `ROW_NUMBER() OVER (ORDER BY ${sort_clause}),` +
-    `id,name,versionkey ` +
+    `id,name,TOU,versionkey ` +
     `FROM ` +
     `users` +
     where_clause
@@ -317,7 +317,7 @@ function respond_directly_with_query (req, res) {
   const sort_clause = sort_clause_SQL(req)
   const get_users_sql =
     `SELECT ` +
-    `id,name,versionkey ` +
+    `id,name,TOU,versionkey ` +
     `FROM ` +
     `users` +
     where_clause +
@@ -375,7 +375,7 @@ function respond_from_existing_result_set (req, res, session_id) {
   //console.log({ requested_ranges })
 
   // pull from results, not fresh query
-  const get_users_from_set = `SELECT id, name, versionkey, set_rownum FROM users_result_sets WHERE set_session_id = ? ORDER BY set_rownum LIMIT ? OFFSET ?`
+  const get_users_from_set = `SELECT id, name, TOU, versionkey, set_rownum FROM users_result_sets WHERE set_session_id = ? ORDER BY set_rownum LIMIT ? OFFSET ?`
   const get_users_from_set_stmt = db.prepare(get_users_from_set)
 
   users = []
@@ -592,11 +592,11 @@ router.post('/users', (req, res) => {
     return
   }
 
-  const stmt = db.prepare(`INSERT INTO users (name, password)
-                 VALUES (?, ?)`)
+  const stmt = db.prepare(`INSERT INTO users (name, password, TOU)
+                 VALUES (?, ?, ?)`)
 
   try {
-    info = stmt.run([user.name, user.password])
+    info = stmt.run([user.name, user.password, user.TOU])
   } catch (err) {
     if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
       log_event({
@@ -612,7 +612,7 @@ router.post('/users', (req, res) => {
     log_event({
       severity: 'Low',
       type: 'CannotCreateUser',
-      message: `Create ${[ser.name, user.password]} failed: ${err}`
+      message: `Create ${[ser.name, user.password, user.TOU]} failed: ${err}`
     })
     console.log('insert error: ', { err, info, user })
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).end()
