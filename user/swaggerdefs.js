@@ -69,7 +69,7 @@
  *           format: '^[^ ]{4,}$'
  *           description: No leading or trailing spaces.
  *       examples: [
- *         { name: "alonzo", password: "lambda" }
+ *         { name: "alonzo", password: "lambda"}
  *       ]
  * 
  *     LoginToken:
@@ -119,6 +119,11 @@
  *           maxLength: 32
  *           pattern: '^[A-Za-z0-9_.-]{1,32}$'
  *           description: Name that they log in with. Must be unique
+ *         email:
+ *           type: string
+ *           minLength: 4
+ *           maxLength: 30
+ *           description: Email associated with account. 
  *         uri:
  *           type: string
  *           readOnly: true
@@ -134,6 +139,7 @@
  *       required:
  *         - name
  *         - password
+ *         - email
  *       properties:
  *         name:
  *           type: string
@@ -146,8 +152,13 @@
  *           minLength: 4
  *           format: password
  *           description: Guess. No leading or trailing spaces. Never returned by an API.
+ *         email:
+ *           type: string
+ *           minLength: 4
+ *           maxLength: 30
+ *           description: Email associated with account. 
  *       examples: [
- *         { name: "alonzo", password: "lambda" }
+ *         { name: "alonzo", password: "lambda", email: "alonzo@gmail.com"}
  *       ]
  * 
  * 
@@ -157,6 +168,7 @@
  *       required:
  *         - name
  *         - password
+ *         - email
  *       properties:
  *         name:
  *           type: string
@@ -169,9 +181,14 @@
  *           minLength: 4
  *           format: password
  *           description: Guess. No leading or trailing spaces. Never returned by an API. description Columns to sort by, separated by commas. Names are case-insensitive. Sorts are ascending unless a "-" is given. "+" is accepted but is unnecessary. Acceptable columns are id and name.
+ *         email:
+ *           type: string
+ *           minLength: 4
+ *           maxLength: 30
+ *           description: Email associated with account. 
 
  *       examples: [
- *         { name: "alonzo", password: "lambda" }
+ *         { name: "alonzo", password: "lambda", email: "alonzo@gmail.com" }
  *         ]
  * 
  *     PatchingUser:
@@ -188,8 +205,13 @@
  *           minLength: 4
  *           format: password
  *           description: Guess. No leading or trailing spaces. Never returned by an API.
+ *         email:
+ *           type: string
+ *           minLength: 4
+ *           maxLength: 30
+ *           description: Email associated with account. 
  *       examples: [
- *         { name: "alonzo", password: "lambda" }
+ *         { name: "alonzo", password: "lambda", email: "alonzo@gmail.com" }
  *       ]
  *
   *     UserFilteringSpec:
