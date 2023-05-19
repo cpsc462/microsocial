@@ -317,7 +317,7 @@ function respond_directly_with_query (req, res) {
   const sort_clause = sort_clause_SQL(req)
   const get_users_sql =
     `SELECT ` +
-    `id,name,versionkey ` +
+    `id,name,email,recov_email,country,phone_number,versionkey ` +
     `FROM ` +
     `users` +
     where_clause +
@@ -592,13 +592,25 @@ router.post('/users', (req, res) => {
     return
   }
 
-  const stmt = db.prepare(`INSERT INTO users (name, password)
-                 VALUES (?, ?)`)
+  const stmt = db.prepare(`INSERT INTO users (name, password, email, recov_email, country, phone_number)
+                 VALUES (?, ?, ?, ?, ?, ?)`)
 
   try {
-    info = stmt.run([user.name, user.password])
+    //email regex check
+    if (!/^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(user.email)) {
+      throw new Error('Invalid email format');
+    }
+    if (!/^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(user.recov_email)) {
+      throw new Error('Invalid recovery email format');
+    }
+    if (!/^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/.test(user.phone_number)) {
+      throw new Error('Invalid phone number format');
+    }
+    info = stmt.run([user.name, user.password, user.email, user.recov_email, user.country, user.phone_number])
+
   } catch (err) {
-    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+    // unique user name check
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' && err.message.includes('name')) {
       log_event({
         severity: 'Low',
         type: 'NonUniqueNameCreateRequest',
@@ -606,6 +618,55 @@ router.post('/users', (req, res) => {
       })
 
       res.statusMessage = 'Account already exists'
+      res.status(StatusCodes.BAD_REQUEST).end()
+      return
+    }
+    // unique email check
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' && err.message.includes('email')) {
+      log_event({
+        severity: 'Low',
+        type: 'NonUniqueEMailCreateRequest',
+        message: `Create Request for (existing) User ${user.email} received.`
+      })
+
+      res.statusMessage = ' with email already exists'
+      res.status(StatusCodes.BAD_REQUEST).end()
+      return
+    }
+
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' && err.message.includes('phone number')) {
+      log_event({
+        severity: 'Low',
+        type: 'NonUniqueEMailCreateRequest',
+        message: `Create Request for (existing) User ${user.phone_number} received.`
+      })
+
+      res.statusMessage = ' with phone_number already exists'
+      res.status(StatusCodes.BAD_REQUEST).end()
+      return
+    }
+    // email follows regex above
+    if (err.message.includes("Invalid email format")) {
+      log_event({
+        severity: 'Low',
+        type: 'IncorrectFormatEmailCreateRequest',
+        message: `Create Request for (existing) User with email ${user.email} received.`
+      })
+
+      res.statusMessage = 'Invalid email'
+      res.status(StatusCodes.BAD_REQUEST).end()
+      return
+    }
+
+    // email follows regex above
+    if (err.message.includes("Invalid recovery email format")) {
+      log_event({
+        severity: 'Low',
+        type: 'IncorrectFormatEmailCreateRequest',
+        message: `Create Request for (existing) User with email ${user.recov_email} received.`
+      })
+
+      res.statusMessage = 'Invalid email'
       res.status(StatusCodes.BAD_REQUEST).end()
       return
     }
