@@ -1,18 +1,20 @@
-const {
+import {
   ReasonPhrases,
   StatusCodes,
   getReasonPhrase,
-  getStatusCode,
-} = require("http-status-codes");
-var express = require("express");
+  getStatusCode
+} from 'http-status-codes'
+import { StatusCodes } from 'http-status-codes'
+import { isEmail } from 'validator'
+import { Router } from 'express'
 
+var router = Router()
+const _router = router
+export { _router as router }
 
-var router = express.Router();
-module.exports.router = router;
-
-const { uri } = require("../common");
-const { db } = require("../db");
-const { validate } = require("../utils/schema-validation");
+import { uri } from '../common'
+import { db } from '../db'
+import { validate } from '../utils/schema-validation'
 
 /**
  * @swagger
@@ -40,30 +42,65 @@ const { validate } = require("../utils/schema-validation");
  *         description: No such User
  *         examples: [ "Not Found", "No such user" ]
  */
-router.get("/user/:id", (req, res) => {
-  const id = parseInt(req.params.id);
+router.get('/user/recovery-email/:email', (req, res) => {
+  const recoveryEmail = req.params.email
 
-  errors = validate.UserId(id, "{id}");
-  if (errors.length) {
-    res.json(errors);
-    res.statusMessage = "No such user";
-    res.status(StatusCodes.NOT_FOUND).end();
-    return;
-  }
-
-  const stmt = db.prepare("SELECT id,name FROM users where id = ?");
-  users = stmt.all([id]);
+  // Call the getUserByRecoveryEmail method from db.js
+  const users = db.getUserByRecoveryEmail(recoveryEmail)
 
   if (users.length < 1) {
-    res.statusMessage = "No such user";
-    res.status(StatusCodes.NOT_FOUND).end();
-    return;
+    res.statusMessage = 'No users found for the provided recovery email address'
+    res.status(StatusCodes.NOT_FOUND).end()
+    return
   }
 
-  user = users[0];
-  user.uri = uri(`/user/${user.id}`);
-  res.json(user);
-});
+  res.json(users)
+})
+
+router.get('/user/:id', (req, res) => {
+  const id = parseInt(req.params.id)
+
+  errors = validate.UserId(id, '{id}')
+  if (errors.length) {
+    res.json(errors)
+    res.statusMessage = 'No such user'
+    res.status(StatusCodes.NOT_FOUND).end()
+    return
+  }
+
+  const stmt = db.prepare('SELECT id,name FROM users where id = ?')
+  users = stmt.all([id])
+
+  if (users.length < 1) {
+    res.statusMessage = 'No such user'
+    res.status(StatusCodes.NOT_FOUND).end()
+    return
+  }
+
+  user = users[0]
+  user.uri = uri(`/user/${user.id}`)
+  res.json(user)
+
+  // Retrieve the user from the database
+  const user = db.getUserById(id)
+
+  if (!user) {
+    res.status(StatusCodes.NOT_FOUND).json({ error: 'User not found' })
+    return
+  }
+
+  // Retrieve the recovery email address for the user
+  const recoveryEmail = db.getRecoveryEmail(id)
+
+  // Add the recovery email address to the user object
+  const userWithRecoveryEmail = {
+    ...user,
+    recovery_email: recoveryEmail
+  }
+
+  // Send the modified user as the response
+  res.json(userWithRecoveryEmail)
+})
 
 /**
  * @swagger
@@ -99,50 +136,66 @@ router.get("/user/:id", (req, res) => {
  *          description: No such User
  *          examples: [ "Not Found", "No such user" ]
  */
-router.put("/user/:id", (req, res) => {
-  const id = parseInt(req.params.id);
 
-  errors = validate.UserId(id, "{id}");
+import { isEmail } from 'validator'
+
+router.put('/user/:id', (req, res) => {
+  const id = parseInt(req.params.id)
+
+  errors = validate.UserId(id, '{id}')
   if (errors.length) {
-    res.json(errors);
-    res.statusMessage = "No such user";
-    res.status(StatusCodes.NOT_FOUND).end();
-    return;
+    res.json(errors)
+    res.statusMessage = 'No such user'
+    res.status(StatusCodes.NOT_FOUND).end()
+    return
   }
 
-  const updatedUser = req.body;
+  const updatedUser = req.body
 
-  errors = validate.UpdatingUser(updatedUser, "{body}");
+  errors = validate.UpdatingUser(updatedUser, '{body}')
   if (errors.length) {
-    res.json(errors);
-    res.statusMessage = "Invalid update";
-    res.status(StatusCodes.UNPROCESSABLE_ENTITY).end();
-    return;
+    res.json(errors)
+    res.statusMessage = 'Invalid update'
+    res.status(StatusCodes.UNPROCESSABLE_ENTITY).end()
+    return
   }
 
-  const stmt = db.prepare(`UPDATE users SET name=?, password=? WHERE id=?`);
+  if (updatedUser.recovery_email) {
+    const recoveryEmail = updatedUser.recovery_email
+
+    if (!isEmail(recoveryEmail)) {
+      res.statusMessage = 'Invalid recovery email address'
+      res.status(StatusCodes.BAD_REQUEST).end()
+      return
+    }
+
+    const stmt = db.prepare(`UPDATE users SET recovery_email=? WHERE id=?`)
+    stmt.run([recoveryEmail, id])
+  }
+
+  const stmt = db.prepare(`UPDATE users SET name=?, password=? WHERE id=?`)
 
   try {
-    info = stmt.run([updatedUser.name, updatedUser.password, id]);
+    info = stmt.run([updatedUser.name, updatedUser.password, id])
     if (info.changes < 1) {
-      console.log("update error1: ", { err, info, user });
-      res.statusMessage = "Account update failed.";
-      res.status(StatusCodes.BAD_REQUEST).end();
-      return;
+      console.log('update error1: ', { err, info, user })
+      res.statusMessage = 'Account update failed.'
+      res.status(StatusCodes.BAD_REQUEST).end()
+      return
     }
   } catch (err) {
-    if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
-      res.statusMessage = "Account with name already exists";
-      res.status(StatusCodes.BAD_REQUEST).end();
-      return;
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      res.statusMessage = 'Account with name already exists'
+      res.status(StatusCodes.BAD_REQUEST).end()
+      return
     }
-    console.log("update error2: ", { err, info, user });
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).end();
-    return;
+    console.log('update error2: ', { err, info, user })
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).end()
+    return
   }
 
-  res.redirect(`${id}`);
-});
+  res.redirect(`${id}`)
+})
 
 /**
  * @swagger
@@ -178,65 +231,65 @@ router.put("/user/:id", (req, res) => {
  *          description: User not found
  *          examples: [ "Not Found", "No such user" ]
  */
-router.patch("/user/:id", (req, res) => {
-  const id = parseInt(req.params.id);
+router.patch('/user/:id', (req, res) => {
+  const id = parseInt(req.params.id)
 
-  errors = validate.UserId(id, "{id}");
+  errors = validate.UserId(id, '{id}')
   if (errors.length) {
-    res.json(errors);
-    res.statusMessage = "No such user";
-    res.status(StatusCodes.NOT_FOUND).end();
-    return;
+    res.json(errors)
+    res.statusMessage = 'No such user'
+    res.status(StatusCodes.NOT_FOUND).end()
+    return
   }
 
-  const updatedUser = req.body;
+  const updatedUser = req.body
 
-  errors = validate.PatchingUser(updatedUser, "{body}");
+  errors = validate.PatchingUser(updatedUser, '{body}')
   if (errors.length) {
-    res.json(errors);
-    res.statusMessage = "Invalid update";
-    res.status(StatusCodes.UNPROCESSABLE_ENTITY).end();
-    return;
+    res.json(errors)
+    res.statusMessage = 'Invalid update'
+    res.status(StatusCodes.UNPROCESSABLE_ENTITY).end()
+    return
   }
 
-  var info;
+  var info
   try {
-    updateClauses = [];
-    updateParams = [];
+    updateClauses = []
+    updateParams = []
 
-    if ("name" in updatedUser) {
-      updateClauses.push("name = ?");
-      updateParams.push(updatedUser.name);
+    if ('name' in updatedUser) {
+      updateClauses.push('name = ?')
+      updateParams.push(updatedUser.name)
     }
 
-    if ("password" in updatedUser) {
-      updateClauses.push("password = ?");
-      updateParams.push(updatedUser.password);
+    if ('password' in updatedUser) {
+      updateClauses.push('password = ?')
+      updateParams.push(updatedUser.password)
     }
 
     const stmt = db.prepare(
-      `UPDATE users SET ${updateClauses.join(", ")} WHERE id=?`
-    );
+      `UPDATE users SET ${updateClauses.join(', ')} WHERE id=?`
+    )
 
-    info = stmt.run([...updateParams, id]);
+    info = stmt.run([...updateParams, id])
     if (info.changes < 1) {
-      res.statusMessage = "No such user/Error";
-      res.status(StatusCodes.NOT_FOUND).end();
-      return;
+      res.statusMessage = 'No such user/Error'
+      res.status(StatusCodes.NOT_FOUND).end()
+      return
     }
   } catch (err) {
-    if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
-      res.statusMessage = "Account with name already exists";
-      res.status(StatusCodes.BAD_REQUEST).end();
-      return;
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      res.statusMessage = 'Account with name already exists'
+      res.status(StatusCodes.BAD_REQUEST).end()
+      return
     }
-    console.log("update error: ", { err, updatedUser });
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).end();
-    return;
+    console.log('update error: ', { err, updatedUser })
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).end()
+    return
   }
 
-  res.redirect(`${id}`);
-});
+  res.redirect(`${id}`)
+})
 
 /**
 /**
@@ -261,24 +314,24 @@ router.patch("/user/:id", (req, res) => {
  *          description: No such User
  *          examples: [ "Not Found", "No such user" ]
  */
-router.delete("/user/:id", (req, res) => {
-  const id = parseInt(req.params.id);
+router.delete('/user/:id', (req, res) => {
+  const id = parseInt(req.params.id)
 
-  errors = validate.UserId(id, "{id}");
+  errors = validate.UserId(id, '{id}')
   if (errors.length) {
-    res.json(errors);
-    res.statusMessage = "No such user";
-    res.status(StatusCodes.NOT_FOUND).end();
-    return;
+    res.json(errors)
+    res.statusMessage = 'No such user'
+    res.status(StatusCodes.NOT_FOUND).end()
+    return
   }
 
-  const stmt = db.prepare("DELETE FROM users where id = ?");
+  const stmt = db.prepare('DELETE FROM users where id = ?')
 
-  info = stmt.run([id]);
+  info = stmt.run([id])
   if (info.changes < 1) {
-    res.statusMessage = "No such user";
-    res.status(StatusCodes.NOT_FOUND).end();
-    return;
+    res.statusMessage = 'No such user'
+    res.status(StatusCodes.NOT_FOUND).end()
+    return
   }
-  res.status(StatusCodes.NO_CONTENT).end();
-});
+  res.status(StatusCodes.NO_CONTENT).end()
+})

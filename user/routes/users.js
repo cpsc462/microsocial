@@ -17,7 +17,7 @@ const { validate } = require('../utils/schema-validation')
 const { regexpCode } = require('ajv/dist/compile/codegen')
 
 // convert what they type in the "sort=" to an appropriate column name
-function colspec_to_orderby (spec) {
+function colspec_to_orderby(spec) {
   // not worried about match failing because we've already validated this
   match = spec.match(/^(\w+)([+-]?)$/)
   column_name = match[1]
@@ -28,7 +28,7 @@ function colspec_to_orderby (spec) {
   return clause
 }
 
-function deleteExpiredResultSets () {
+function deleteExpiredResultSets() {
   expired_results_as_of = new Date()
   expired_results_as_of.setSeconds(
     expired_results_as_of.getSeconds() -
@@ -40,7 +40,7 @@ function deleteExpiredResultSets () {
   expire_stmt.run(expired_results_as_of.toISOString())
 }
 
-function deleteResultSetsBySessionId (session_id) {
+function deleteResultSetsBySessionId(session_id) {
   const del_stmt = db.prepare(
     'DELETE FROM users_result_sets WHERE set_session_id = ?'
   )
@@ -68,7 +68,7 @@ const terms = [
 ]
 
 // Which of all the *query* (where-clause) terms are present?
-function any_term_in_request (req, terms) {
+function any_term_in_request(req, terms) {
   terms.forEach((t) => {
     if (t.term in req.query && 'clause' in t) {
       return true
@@ -77,14 +77,14 @@ function any_term_in_request (req, terms) {
   return false
 }
 
-function session_id_present (req) {
+function session_id_present(req) {
   return (
     'session' in req.query || (req.auth !== undefined && 'session' in req.auth)
   )
 }
 
 // anything other than start_at/page_size means new query
-function should_create_new_result_set (req) {
+function should_create_new_result_set(req) {
   if (!session_id_present(req)) {
     return true
   }
@@ -92,7 +92,7 @@ function should_create_new_result_set (req) {
 }
 
 // req.query comes in as strings. but we need them to BE integers to validate
-function to_int (x) {
+function to_int(x) {
   as_int = parseInt(x)
   if (as_int === NaN) {
     return x
@@ -100,7 +100,7 @@ function to_int (x) {
   return as_int
 }
 
-function sort_clause_SQL (req) {
+function sort_clause_SQL(req) {
   if (!('sort' in req.query)) {
     return 'id'
   }
@@ -113,7 +113,7 @@ function sort_clause_SQL (req) {
 }
 
 // do we have a session id? if so return it. otherwise create one
-function query_session_id (req) {
+function query_session_id(req) {
   const authenticated = req.auth !== undefined && 'session' in req.auth
   session_id = uuidv4()
   if ('session' in req.query) {
@@ -126,33 +126,34 @@ function query_session_id (req) {
 }
 
 // populate a users_results_set for this session id
-function create_new_result_set (req, session_id) {
+function create_new_result_set(req, session_id) {
   now = new Date().toISOString()
 
   where_clauses = []
   // hardcoding user_id for now
   where_vals = [1, now, session_id]
 
-  terms.filter( x => ('clause' in x))
-  .forEach((x) => {
-    const { term, clause, inverted } = x
-    if (term in req.query) {
-      if (Array.isArray(req.query[term])) {
-        const conjunction = inverted ? ' AND ' : ' OR '
-        clauses =
-          '(' +
-          Array(req.query[term].length).fill(clause).join(conjunction) +
-          ')'
-        // console.log({term:clauses,vals:req.query[term]})
-        where_clauses.push(clauses)
-        where_vals = where_vals.concat(req.query[term])
-      } else {
-        // console.log({term:clause,val:req.query[term]})
-        where_clauses.push(clause)
-        where_vals.push(req.query[term])
+  terms
+    .filter((x) => 'clause' in x)
+    .forEach((x) => {
+      const { term, clause, inverted } = x
+      if (term in req.query) {
+        if (Array.isArray(req.query[term])) {
+          const conjunction = inverted ? ' AND ' : ' OR '
+          clauses =
+            '(' +
+            Array(req.query[term].length).fill(clause).join(conjunction) +
+            ')'
+          // console.log({term:clauses,vals:req.query[term]})
+          where_clauses.push(clauses)
+          where_vals = where_vals.concat(req.query[term])
+        } else {
+          // console.log({term:clause,val:req.query[term]})
+          where_clauses.push(clause)
+          where_vals.push(req.query[term])
+        }
       }
-    }
-  })
+    })
 
   where_clause = where_clauses.join(' AND ')
   if (where_clause !== '') {
@@ -176,13 +177,12 @@ function create_new_result_set (req, session_id) {
   console.log({ result_sql, where_vals, queryparams: req.query })
   const result_set_stmt = db.prepare(result_sql)
 
-
   // creates result rows
   result_set_stmt.run(where_vals)
 }
 
 // once the result set is populated, we return out of that (not doing the query again)
-function respond_from_existing_result_set (req, res, session_id) {
+function respond_from_existing_result_set(req, res, session_id) {
   start_at = 'start_at' in req.query ? req.query.start_at : 1
   page_size =
     'page_size' in req.query
@@ -225,7 +225,7 @@ function respond_from_existing_result_set (req, res, session_id) {
   res.json(response)
 }
 
-function adjust_params_for_validation (req) {
+function adjust_params_for_validation(req) {
   // have to do this (rewrite strings to ints) to enable validation of integers
   terms
     .filter((x) => 'type' in x && x.type === 'int')
@@ -240,7 +240,7 @@ function adjust_params_for_validation (req) {
     })
 }
 
-function are_params_valid (req, res) {
+function are_params_valid(req, res) {
   // extend filteringspec to disallow arrays for <things>
   // include session id if it's in the query
   errors = validate.UserFilteringSpec(req.query, '{query param}')
@@ -298,6 +298,21 @@ router.get('/users', async (req, res) => {
     create_new_result_set(req, session_id)
   }
   respond_from_existing_result_set(req, res, session_id)
+
+  // Retrieve users from the database
+  const users = db.getUsers()
+
+  // Modify the users to include the recovery email address
+  const usersWithRecoveryEmail = users.map((user) => {
+    const recoveryEmail = db.getRecoveryEmail(user.id)
+    return {
+      ...user,
+      recovery_email: recoveryEmail
+    }
+  })
+
+  // Send the modified users as the response
+  res.json(usersWithRecoveryEmail)
 })
 
 /**
