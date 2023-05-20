@@ -199,6 +199,16 @@ function create_new_result_set (req, session_id) {
   result_set_stmt.run(all_where_vals)
   return true
 }
+// Creates the function for the LastLogin from the user
+function LastLogin(name){
+  const log_Date = new Date().toISOString();
+  const storeDate = db.prepare('UPDATE users SET LastLogin=? WHERE name=?')
+  storeDate.run(LastLogin,name)
+
+  const retrieveLoginDate = db.prepare('SELECT LastLogin FROM users WHERE na,e = ?')
+  const result = storeDate.get(name)
+  return result.LastLogin
+}
 
 // returns [{start: end:}...] ranges (either start or end may be NaN/undefined),
 // or false when the range is not valid
@@ -317,7 +327,7 @@ function respond_directly_with_query (req, res) {
   const sort_clause = sort_clause_SQL(req)
   const get_users_sql =
     `SELECT ` +
-    `id,name,versionkey ` +
+    `id,name,Email,PhoneNumber,Country,versionkey ` +
     `FROM ` +
     `users` +
     where_clause +
@@ -592,11 +602,19 @@ router.post('/users', (req, res) => {
     return
   }
 
-  const stmt = db.prepare(`INSERT INTO users (name, password)
-                 VALUES (?, ?)`)
+  const stmt = db.prepare(`INSERT INTO users (name, password, Email, PhoneNumber, Country)
+                 VALUES (?, ?, ?, ?, ?)`)
 
   try {
-    info = stmt.run([user.name, user.password])
+   //email regex check
+  if (!/^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(user.Email)) {
+    throw new Error('Invalid email format, ckeck email formatting');
+  }
+  if (!/^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/.test(user.PhoneNumber)) {
+    throw new Error('Invalid phone number format, ckeck phone number formatting');
+  }
+  info = stmt.run([user.name, user.password, user.Email, user.PhoneNumber, user.Country])
+
   } catch (err) {
     if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
       log_event({
@@ -609,10 +627,48 @@ router.post('/users', (req, res) => {
       res.status(StatusCodes.BAD_REQUEST).end()
       return
     }
+
+    // Email Checks
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' && err.message.includes('Email')) {
+      log_event({
+        severity: 'Low',
+        type: 'DuplicateEmailCreateRequest',
+        message: `Duplicate Request for user email ${user.Email} received.`
+      })
+
+      res.statusMessage = ' Email already exists'
+      res.status(StatusCodes.BAD_REQUEST).end()
+      return
+    }
+    //Email invalid format check
+    if (err.message.includes("Invalid email format")) {
+      log_event({
+        severity: 'Low',
+        type: 'InvalidEmailFormatRequest',
+        message: `Request for user with wrong format email ${user.Email} received.`
+      })
+
+      res.statusMessage = 'Invalid Email'
+      res.status(StatusCodes.BAD_REQUEST).end()
+      return
+    }
+    //Phone Number checks
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' && err.message.includes('PhoneNumber')) {
+      log_event({
+        severity: 'Low',
+        type: 'DuplicatePhoneNumberRequest',
+        message: `Duplicate Request for user phone number ${user.PhoneNumber} received.`
+      })
+
+      res.statusMessage = 'PhoneNumber already exists'
+      res.status(StatusCodes.BAD_REQUEST).end()
+      return
+    } 
+    
     log_event({
       severity: 'Low',
       type: 'CannotCreateUser',
-      message: `Create ${[ser.name, user.password]} failed: ${err}`
+      message: `Create ${[ser.name, user.password, user.Email]} failed: ${err}`
     })
     console.log('insert error: ', { err, info, user })
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).end()
@@ -623,6 +679,7 @@ router.post('/users', (req, res) => {
   user.id = info.lastInsertRowid
   user.uri = USERS_SERVICE(`/user/${user.id}`)
   delete user.password
+  delete user.Email
 
   log_event({
     severity: 'Low',
