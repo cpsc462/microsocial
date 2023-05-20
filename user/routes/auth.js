@@ -7,6 +7,7 @@ const { v4: uuidv4 } = require('uuid')
 const ms = require('ms')
 const dotenv = require('dotenv')
 
+
 const { unprotectedPaths, USERS_SERVICE, log_event, returnError } = require('../common')
 const { validate } = require('../utils/schema-validation')
 var { db } = require('../db')

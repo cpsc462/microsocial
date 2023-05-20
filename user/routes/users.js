@@ -199,6 +199,15 @@ function create_new_result_set (req, session_id) {
   result_set_stmt.run(all_where_vals)
   return true
 }
+function lastLoginDate(name){
+  const logInDate = new Date().toISOString();
+  const storeLoginDate = db.prepare('UPDATE users SET last_login = ? WHERE name = ?')
+  storeLoginDate.run(loginDate,name)
+
+  const getLogInDate = db.prepare('SELECT last_login FROM users WHERE name = ?')
+  const result = storeLogInDate.get(name)
+  return result.last_login
+}
 
 // returns [{start: end:}...] ranges (either start or end may be NaN/undefined),
 // or false when the range is not valid

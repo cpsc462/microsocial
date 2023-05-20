@@ -50,6 +50,21 @@
  *       examples: [
  *         { id: 1, name: "alonzo", password: "lambda", uri: "http://lh:8/user/14" }
  *       ]
+ *     lastLoginDate:
+ *          type: object
+ *          summary: adds column to user table with date of user's last log in
+ *          required:
+ *              - name
+ *          properties:
+ *           name:
+ *              type: string
+ *              minLength: 1
+ *              maxLength: 32
+ *              pattern: '^[A-Za-z0-9_.-]{1,32}$'
+ *              description: Name that they log in with. Must be unique
+ *          loginDate:
+ *              type: string
+ *              description: last date user logged in
  * 
  *     LoginInfo:
  *       type: object
