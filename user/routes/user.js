@@ -56,7 +56,7 @@ router.get("/user/:id", (req, res) => {
     return;
   }
 
-  const stmt = db.prepare("SELECT id,name FROM users where id = ?");
+  const stmt = db.prepare("SELECT id, name, Email, Country, PhoneNumber, LastLogin, FROM users where id = ?");
   users = stmt.all([id]);
 
   if (users.length < 1) {
@@ -140,10 +140,10 @@ router.put("/user/:id", (req, res) => {
     return;
   }
 
-  const stmt = db.prepare(`UPDATE users SET name=?, password=? WHERE id=?`);
+  const stmt = db.prepare(`UPDATE users SET name=?, password=?, Email=?, PhoneNumber=?, Country=?, LastLogin=?, WHERE id=?`);
 
   try {
-    info = stmt.run([updatedUser.name, updatedUser.password, id]);
+    info = stmt.run([updatedUser.name, updatedUser.password, updateUser.Email, updateUser.PhoneNumber, updateUser.Country, updatedUser.LastLogin, id]);
     if (info.changes < 1) {
       log_event({
         severity: 'Low',
@@ -155,12 +155,51 @@ router.put("/user/:id", (req, res) => {
       res.status(StatusCodes.BAD_REQUEST).end();
       return;
     }
+  //Check email format
+  if (!/^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(updatedUser.Email)) {
+  throw new Error('Invalid email format');
+  }
+  //Check Phone Number format
+  if (!/^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/.test(updatedUser.PhoneNumber)) {
+    throw new Error('Invalid phone number format');
+    }
+  
+
   } catch (err) {
     if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
       res.statusMessage = "Account with name already exists";
       res.status(StatusCodes.BAD_REQUEST).end();
       return;
     }
+    //Email check
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' && err.message.includes('Email')){
+      res.statusMessage = "An account with this email already exists";
+      res.status(StatusCodes.BAD_REQUEST).end();
+      return;
+    }
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' && err.message.includes('Invalid Email format')){
+      res.statusMessage = "Invalid email format, ckeck email formatting";
+      res.status(StatusCodes.BAD_REQUEST).end();
+      return;
+    }
+    //Phone Number Check
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' && err.message.includes('PhoneNumber')){
+      res.statusMessage = "An account with this phone number already exists";
+      res.status(StatusCodes.BAD_REQUEST).end();
+      return;
+    }
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' && err.message.includes('Invalid phone number format')){
+      res.statusMessage = "Invalid phone number, ckeck phone number formatting";
+      res.status(StatusCodes.BAD_REQUEST).end();
+      return;
+    }
+    /* Unsuccessful login
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' && err.message.includes('Last_Login')) {
+      res.statusMessage = "Unsuccessful login, will not be recorded";
+      res.status(StatusCodes.BAD_REQUEST).end();
+      return;
+    }
+    */
     log_event({
       severity: 'Low',
       type: 'InvalidUserUpdate3',
@@ -249,9 +288,29 @@ router.patch("/user/:id", (req, res) => {
       updateParams.push(updatedUser.name);
     }
 
+    if("Email" in updatedUser) {
+      //Email check
+      if (!/^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(updatedUser.Email)) {
+        throw new Error('Invalid email format, ckeck email formatting');
+      }
+      updateClauses.push("Emails = ?");
+      updateParams.push(updatedUser.Email);
+    }
+
     if ("password" in updatedUser) {
       updateClauses.push("password = ?");
       updateParams.push(updatedUser.password);
+    }
+    if ("PhoneNumber" in updatedUser) {
+      if (!/^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/.test(updatedUser.PhoneNumber)) {
+        throw new Error('Invalid phone number, ckeck phone number formatting');
+      }
+      updateClauses.push("password = ?");
+      updateParams.push(updatedUser.PhoneNumber);
+    }
+    if ("Country" in updatedUser) {
+      updateClauses.push("Country = ?");
+      updateParams.push(updatedUser.Country);
     }
 
     const stmt = db.prepare(
@@ -272,6 +331,28 @@ router.patch("/user/:id", (req, res) => {
   } catch (err) {
     if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
       res.statusMessage = "Account with name already exists";
+      res.status(StatusCodes.BAD_REQUEST).end();
+      return;
+    }
+    //Email check
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' && err.message.includes('Email')){
+      res.statusMessage = "An account with this email already exists";
+      res.status(StatusCodes.BAD_REQUEST).end();
+      return;
+    }
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' && err.message.includes('Invalid Email format')){
+      res.statusMessage = "Invalid email format, ckeck email formatting";
+      res.status(StatusCodes.BAD_REQUEST).end();
+      return;
+    }
+    //Phone Number Check
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' && err.message.includes('PhoneNumber')){
+      res.statusMessage = "An account with this phone number already exists";
+      res.status(StatusCodes.BAD_REQUEST).end();
+      return;
+    }
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' && err.message.includes('Invalid phone number format')){
+      res.statusMessage = "Invalid phone number, ckeck phone number formatting";
       res.status(StatusCodes.BAD_REQUEST).end();
       return;
     }

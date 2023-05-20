@@ -25,6 +25,9 @@
  *         - id
  *         - name
  *         - password
+ *         - Email
+ *         - Phone Number
+ *         - Country
  *       properties:
  *         id:
  *           type: integer
@@ -42,20 +45,33 @@
  *           minLength: 4
  *           format: password
  *           description: No leading or trailing spaces. Never returned by an API.
+ *         Email:
+ *           Type: String
+ *           minLength: 4
+ *           Pattern: '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/i'
+ *           Description: Checks for correct email to be inputted.
+ *         PhoneNumber:
+ *           Type: String
+ *           minLength: 1
+ *           format: '^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$'
+ *           description: Phone Number already in use! Must use other phone number.
+ *         Country:
+ *           type: String
+ *           minLength: 1
+ *           format: Country
+ *           description: N/A-Country.
  *         uri:
  *           type: string
  *           readOnly: true
  *           format: password
  *           description: URI to this object. Set by API at User creation.
  *       examples: [
- *         { id: 1, name: "alonzo", password: "lambda", uri: "http://lh:8/user/14" }
+ *         { id: 1, name: "alonzo", password: "lambda", email: alonzo@email.com, uri: "http://lh:8/user/14" }
  *       ]
- * 
- *     LoginInfo:
+ *      
+ *     LastLogin:
+ *       summary: Creates a section next to the user table, indicating the previous login date.
  *       type: object
- *       required:
- *         - name
- *         - password
  *       properties:
  *         name:
  *           type: string
@@ -63,7 +79,10 @@
  *           maxLength: 32
  *           pattern: '^[A-Za-z0-9_.-]{1,32}$'
  *           description: Name that they log in with.
- *         password:
+ *     LoginDate:
+ *          Type: TEXT
+ *          Summary: Date for last login from user
+ *          password:
  *           type: string
  *           minLength: 4
  *           format: '^[^ ]{4,}$'
@@ -119,6 +138,21 @@
  *           maxLength: 32
  *           pattern: '^[A-Za-z0-9_.-]{1,32}$'
  *           description: Name that they log in with. Must be unique
+ *         Email:
+ *           Type: String
+ *           minLength: 4
+ *           Pattern: '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/i'
+ *           Description: Checks for correct email to be inputted.Email:
+ *         PhoneNumber:
+ *           Type: String
+ *           minLength: 1
+ *           format: '^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$'
+ *           description: Phone Number already in use! Must use other phone number.
+ *         Country:
+ *           type: String
+ *           minLength: 1
+ *           format: Country
+ *           description: N/A-Country.
  *         uri:
  *           type: string
  *           readOnly: true
@@ -134,6 +168,9 @@
  *       required:
  *         - name
  *         - password
+ *         - Email
+ *         - Phone Number
+ *         - Country
  *       properties:
  *         name:
  *           type: string
@@ -146,17 +183,33 @@
  *           minLength: 4
  *           format: password
  *           description: Guess. No leading or trailing spaces. Never returned by an API.
+ *         Email:
+ *           Type: string
+ *           minLength: 4
+ *           Patterm: '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/i'
+ *           Description: Checks for correct email to be inputted.
+ *         PhoneNumber:
+ *           Type: String
+ *           minLength: 1
+ *           format: '^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$'
+ *           description: Phone Number already in use! Must use other phone number.
+ *         Country:
+ *           type: String
+ *           minLength: 1
+ *           format: Country
+ *           description: N/A-Country.
  *       examples: [
- *         { name: "alonzo", password: "lambda" }
+ *         { name: "alonzo", password: "lambda", Email: alonzo@email.com, PhoneNumber: (909)123-4567, Country: USA}
  *       ]
- * 
- * 
  *     UpdatingUser:
  *       type: object
  *       summary: User schema submitted when updating.
  *       required:
  *         - name
  *         - password
+ *         - Email
+ *         - Phone Number
+ *         -Country
  *       properties:
  *         name:
  *           type: string
@@ -188,8 +241,23 @@
  *           minLength: 4
  *           format: password
  *           description: Guess. No leading or trailing spaces. Never returned by an API.
+ *         Email:
+ *           Type: string
+ *           minLength: 4
+ *           Patterm: '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/i'
+ *           Description: Checks for correct email to be inputted.
+ *         PhoneNumber:
+ *           Type: String
+ *           minLength: 1
+ *           format: '^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$'
+ *           description: Phone Number already in use! Must use other phone number.
+ *         Country:
+ *           type: String
+ *           minLength: 1
+ *           format: Country
+ *           description: N/A-Country.
  *       examples: [
- *         { name: "alonzo", password: "lambda" }
+ *         { name: "alonzo", password: "lambda", Email: alonzo87@email.com,PhoneNumber: (909)123-4567, Country: USA}
  *       ]
  *
   *     UserFilteringSpec:
