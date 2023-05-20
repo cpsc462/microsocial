@@ -56,7 +56,7 @@ router.get("/user/:id", (req, res) => {
     return;
   }
 
-  const stmt = db.prepare("SELECT id,name FROM users where id = ?");
+  const stmt = db.prepare("SELECT id,name,tou,email,phonenumber FROM users where id = ?");
   users = stmt.all([id]);
 
   if (users.length < 1) {
@@ -140,10 +140,10 @@ router.put("/user/:id", (req, res) => {
     return;
   }
 
-  const stmt = db.prepare(`UPDATE users SET name=?, password=? WHERE id=?`);
+  const stmt = db.prepare(`UPDATE users SET name=?, password=?, tou=?, email=?, phonenumber=? WHERE id=?`);
 
   try {
-    info = stmt.run([updatedUser.name, updatedUser.password, id]);
+    info = stmt.run([updatedUser.name, updatedUser.password,updatedUser.tou,updatedUser.email,updatedUser.phonenumber, id]);
     if (info.changes < 1) {
       log_event({
         severity: 'Low',
@@ -155,6 +155,18 @@ router.put("/user/:id", (req, res) => {
       res.status(StatusCodes.BAD_REQUEST).end();
       return;
     }
+
+    //validate email
+    if (!(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(updatedUser.email))){
+      throw new Error('Invalid email format');
+    }
+
+    //validate phonenumber
+    if(!(/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im.test(updatedUser.phonenumber))){
+      throw new Error('Invalid phone number format')
+    }
+
+
   } catch (err) {
     if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
       res.statusMessage = "Account with name already exists";
@@ -252,6 +264,21 @@ router.patch("/user/:id", (req, res) => {
     if ("password" in updatedUser) {
       updateClauses.push("password = ?");
       updateParams.push(updatedUser.password);
+    }
+
+    if ("tou" in updatedUser) {
+      updateClauses.push("tou = ?");
+      updateParams.push(updatedUser.tou);
+    }
+
+    if ("email" in updatedUser) {
+      updateClauses.push("email = ?");
+      updayeParams.push(updatedUser.email);
+    }
+
+    if ("phonenumber" in updatedUser) {
+      updateClauses.push("phonenumber = ?");
+      updateParams.push(updatedUser.phonenumber);
     }
 
     const stmt = db.prepare(
